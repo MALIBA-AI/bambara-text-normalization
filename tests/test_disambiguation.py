@@ -83,6 +83,137 @@ class TestNDisambiguation:
         assert normalizer("n'u ma") == "na u ma"
 
 
+class TestBackwardContext:
+    """Tests for bidirectional context disambiguation (NEW)."""
+
+    def test_speech_verb_fo_with_emphatic_ale(self, normalizer):
+        """Backward speech verb fɔ + emphatic ale → ko (reported speech)."""
+        result = normalizer("A y'a fɔ k'ale filɛ")
+        assert "ko ale" in result
+
+    def test_speech_verb_fo_with_emphatic_olu(self, normalizer):
+        """Backward speech verb fɔ + emphatic olu → ko."""
+        result = normalizer("A y'a fɔ k'olu taa")
+        assert "ko olu" in result
+
+    def test_speech_verb_fo_with_emphatic_anw(self, normalizer):
+        """Backward speech verb fɔ + emphatic anw → ko."""
+        result = normalizer("A y'a fɔ k'anw taa")
+        assert "ko anw" in result
+
+    def test_speech_verb_jaabi_with_emphatic(self, normalizer):
+        """Backward speech verb jaabi + emphatic pronoun → ko."""
+        result = normalizer("A y'a jaabi k'ale bɔra")
+        assert "ko ale" in result
+
+    def test_speech_verb_nininka_with_emphatic(self, normalizer):
+        """Backward speech verb ɲininka + emphatic pronoun → ko."""
+        result = normalizer("A y'a ɲininka k'ale bɛna taa")
+        assert "ko ale" in result
+
+    def test_speech_verb_with_simple_pronoun_stays_ka(self, normalizer):
+        """Speech verb + simple pronoun a → still ka (infinitive instruction)."""
+        assert normalizer("A y'a fɔ k'a ta") == "a ye a fɔ ka a ta"
+
+    def test_speech_verb_with_simple_pronoun_i_stays_ka(self, normalizer):
+        """Speech verb + simple pronoun i → still ka."""
+        result = normalizer("A y'a fɔ k'i dun")
+        assert "ka i" in result
+
+    def test_no_speech_verb_emphatic_stays_ka(self, normalizer):
+        """Without speech verb, emphatic pronoun still defaults to ka."""
+        assert normalizer("k'ale ta a la") == "ka ale ta a la"
+
+    def test_no_speech_verb_emphatic_default(self, normalizer):
+        """No backward speech context → default ka for emphatic."""
+        assert normalizer("k'olu filɛ") == "ka olu filɛ"
+
+    def test_forward_rules_override_backward(self, normalizer):
+        """Forward postposition still takes priority over backward context."""
+        result = normalizer("A y'a fɔ k'a la")
+        assert "kɛ a la" in result
+
+    def test_forward_clause_marker_with_backward(self, normalizer):
+        """Forward clause marker still gives ko (backward context is redundant)."""
+        result = normalizer("A y'a fɔ k'an ka taa")
+        assert "ko an ka taa" in result
+
+    def test_speech_verb_perfective_fora(self, normalizer):
+        """Perfective form fɔra also triggers backward context."""
+        result = normalizer("A fɔra k'ale taa")
+        assert "ko ale" in result
+
+
+class TestNewPostpositions:
+    """Tests for newly added postpositions (kan, na)."""
+
+    def test_ke_postposition_kan(self, normalizer):
+        """k' + pronoun + kan → kɛ (on top of / about)."""
+        assert normalizer("k'a kan") == "kɛ a kan"
+
+    def test_ke_postposition_na(self, normalizer):
+        """k' + pronoun + na → kɛ (in/at, dialectal variant of la)."""
+        assert normalizer("k'a na") == "kɛ a na"
+
+    def test_ke_kan_in_sentence(self, normalizer):
+        """kan postposition in a full sentence."""
+        assert normalizer("A ye nin k'a kan") == "a ye nin kɛ a kan"
+
+    def test_ke_na_in_sentence(self, normalizer):
+        """na postposition in a full sentence."""
+        result = normalizer("I ka k'a na sigida la")
+        assert "kɛ a na" in result
+
+
+class TestTAMMarkersFromDaba:
+    """Tests for TAM (Tense-Aspect-Mood) markers informed by Daba's pm category."""
+
+    def test_ko_with_bena_future(self, normalizer):
+        """k' + pronoun + bɛna (future) → ko (full clause with TAM)."""
+        result = normalizer("k'a bɛna taa")
+        assert "ko a bɛna" in result
+
+    def test_ko_with_tena_negative_future(self, normalizer):
+        """k' + pronoun + tɛna (negative future) → ko."""
+        result = normalizer("k'a tɛna na")
+        assert "ko a tɛna" in result
+
+    def test_ko_with_tun_past(self, normalizer):
+        """k' + pronoun + tun (past) → ko (past clause)."""
+        result = normalizer("k'a tun bɛ yen")
+        assert "ko a tun" in result
+
+    def test_ko_with_be_tam(self, normalizer):
+        """k' + pronoun + bɛ (imperfective) → ko."""
+        result = normalizer("k'a bɛ na")
+        assert "ko a bɛ" in result
+
+    def test_ko_with_te_negative(self, normalizer):
+        """k' + pronoun + tɛ (negative imperfective) → ko."""
+        result = normalizer("k'a tɛ se")
+        assert "ko a tɛ" in result
+
+    def test_ko_with_emphatic_particle_de(self, normalizer):
+        """k' + pronoun + de (emphatic particle) → ko."""
+        result = normalizer("k'ale de y'a kɛ")
+        assert "ko ale de" in result
+
+    def test_ko_with_emphatic_particle_de_simple(self, normalizer):
+        """k' + pronoun + dɛ (emphatic particle variant) → ko."""
+        result = normalizer("k'a dɛ")
+        assert "ko a dɛ" in result
+
+    def test_ko_with_yere_reflexive(self, normalizer):
+        """k' + pronoun + yɛrɛ (self/reflexive emphatic) → ko."""
+        result = normalizer("k'a yɛrɛ ye a kɛ")
+        assert "ko a yɛrɛ" in result
+
+    def test_ko_with_mana_conditional(self, normalizer):
+        """k' + pronoun + mana (conditional marker) → ko."""
+        result = normalizer("k'a mana taa")
+        assert "ko a mana" in result
+
+
 class TestComplexDisambiguation:
     def test_k_followed_by_k_contraction(self, normalizer):
         """k'o k'a la => ka o kɛ a la"""
@@ -120,3 +251,13 @@ class TestComplexDisambiguation:
         result = normalizer("N'a ma k'u ka a ta")
         assert "na a ma" in result
         assert "ko u ka" in result
+
+    def test_backward_and_forward_combined(self, normalizer):
+        """Speech verb in backward + clause marker in forward → ko (both agree)."""
+        result = normalizer("Musa y'a fɔ k'an ka taa")
+        assert "ko an ka taa" in result
+
+    def test_multiple_contractions_with_speech_verb(self, normalizer):
+        """Full sentence: He told him that HE himself did it."""
+        result = normalizer("A y'a fɔ k'ale yɛrɛ de y'a kɛ")
+        assert "ko ale" in result
