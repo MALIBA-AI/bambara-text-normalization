@@ -75,6 +75,7 @@ class BambaraNormalizer:
 
     KE_POSTPOSITIONS = {
         "la",
+        "na",
         "ye",
         "fɛ",
         "kɔnɔ",
@@ -82,6 +83,7 @@ class BambaraNormalizer:
         "kɔrɔ",
         "da",
         "daa",
+        "kan",
         "kun",
         "ɲɛ",
         "ɲɛɛ",
@@ -94,6 +96,21 @@ class BambaraNormalizer:
         "kosɔn",
         "kama",
     }
+
+    SPEECH_VERBS = {
+        "fɔ",
+        "fɔra",
+        "fɔla",
+        "jaabi",
+        "jaabira",
+        "jaabila",
+        "ɲininka",
+        "ɲininkara",
+        "da",
+        "dara",
+    }
+
+    EMPHATIC_PRONOUNS = {"ale", "ile", "olu", "anw", "aw"}
 
     REPORTED_SPEECH_MARKERS = {
         "ko",
@@ -362,6 +379,8 @@ class BambaraNormalizer:
         if not k_match:
             return "ka"
 
+        pronoun = k_match.group(1)
+
         if idx + 1 < len(words):
             next_word = words[idx + 1]
             next_base = self._get_lookahead_base(next_word)
@@ -395,7 +414,19 @@ class BambaraNormalizer:
 
                 return "kɛ"
 
+            if pronoun.lower() in self.EMPHATIC_PRONOUNS and self._has_speech_context(words, idx):
+                return "ko"
+
         return "ka"
+
+    def _has_speech_context(self, words: list[str], index: int) -> bool:
+        """Check if backward context contains speech verbs within 3 words."""
+        start = max(0, index - 3)
+        for j in range(start, index):
+            base = self._strip_tones_and_punct(words[j].lower())
+            if base in self.SPEECH_VERBS:
+                return True
+        return False
 
     def _expand_k_contraction(self, text: str) -> str:
         words = text.split()
@@ -442,6 +473,10 @@ class BambaraNormalizer:
                     elif next_word_base in self.KE_POSTPOSITIONS:
                         expanded = f"kɛ {pronoun}"
                     elif next_word_base in self.CLAUSE_MARKERS:
+                        expanded = f"ko {pronoun}"
+                    elif pronoun.lower() in self.EMPHATIC_PRONOUNS and self._has_speech_context(
+                        words, i
+                    ):
                         expanded = f"ko {pronoun}"
                     else:
                         expanded = f"ka {pronoun}"
