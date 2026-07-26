@@ -670,6 +670,11 @@ ko a  ─┘
 
 ## Command Line Interface
 
+The CLI is built with [Typer](https://typer.tiangolo.com/) and [Rich](https://rich.readthedocs.io/):
+`--help` is fully formatted, evaluation metrics come back as tables, and results printed to a
+terminal are framed. Piped or redirected output is always plain text, so the tool composes with
+other commands; `--plain` forces plain text on a terminal too.
+
 ### Basic Usage
 
 ```bash
@@ -723,7 +728,27 @@ bambara-normalize --input corpus.txt --output normalized.txt
 
 # With specific mode
 bambara-normalize --input corpus.txt --output normalized.txt --mode contract
+
+# Read from stdin
+echo "B'a fɔ́" | bambara-normalize
 ```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-m, --mode` | `expand` (default), `contract`, `preserve` |
+| `-p, --preset` | `standard` (default), `wer`, `cer`, `minimal`, `preserving_tones` |
+| `-f, --input` | Input file, one utterance per line (alias: `--file`) |
+| `-o, --output` | Write results to a file instead of stdout |
+| `-e, --evaluate` | Treat the two arguments as reference and hypothesis files |
+| `--detailed` | With `--evaluate`, add a per-utterance table |
+| `--preserve-tones` | Keep tone marks |
+| `--expand-numbers` | Expand digits to Bambara words |
+| `--debug` | Print the intermediate normalization steps to stderr |
+| `--plain` | Unstyled output, even on a terminal |
+| `-v, --version` | Print the version |
+| `-h, --help` | Show help |
 
 ---
 
