@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import re
 
+from .spans import NUMBER, NumericSpan, find_spans, substitute
+
 UNITS = [
     "fu",
     "kelen",
@@ -343,9 +345,34 @@ def _parse_decimal_digits(phrase: str) -> str:
     return "".join(digits) if digits else "0"
 
 
+NUMBER_PATTERN = re.compile(r"\d[\d.,]*")
+
+
+def _replace_number(match: re.Match) -> str | None:
+    try:
+        return number_to_bambara(match.group(0))
+    except (ValueError, IndexError):
+        return None
+
+
+def find_number_spans(text: str) -> list[NumericSpan]:
+    """
+    Find bare numerals in text and their Bambara expansions.
+
+    Numbers are the most generic numeric shape, so these spans lose against any
+    overlapping date, time, or measurement span. See `spans.resolve_spans`.
+    """
+    return find_spans(text, NUMBER_PATTERN, NUMBER, _replace_number)
+
+
 def normalize_numbers_in_text(text: str) -> str:
     """
     Replace all numerals in text with Bambara words.
+
+    This expands every numeral it finds, including the digits of dates, times,
+    and measurements. To expand mixed text, use
+    `numeric.normalize_numeric_expressions`, which classifies each numeric span
+    before expanding it.
 
     Args:
         text: Input text with numerals
@@ -359,16 +386,7 @@ def normalize_numbers_in_text(text: str) -> str:
         >>> normalize_numbers_in_text("Mɔgɔ 100 nana")
         'Mɔgɔ kɛmɛ nana'
     """
-
-    def replace_number(match: re.Match) -> str:
-        num_str = match.group(0)
-        try:
-            return number_to_bambara(num_str)
-        except (ValueError, IndexError):
-            return num_str
-
-    pattern = r"\d[\d.,]*"
-    return re.sub(pattern, replace_number, text)
+    return substitute(text, find_number_spans(text))
 
 
 def denormalize_numbers_in_text(text: str) -> str:
