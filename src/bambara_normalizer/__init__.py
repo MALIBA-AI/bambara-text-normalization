@@ -74,6 +74,14 @@ from .numbers import (
     number_to_bambara,
     number_to_ordinal,
 )
+from .numeric import (
+    find_numeric_spans,
+    normalize_numeric_expressions,
+)
+from .spans import (
+    KIND_PRECEDENCE,
+    NumericSpan,
+)
 from .times import (
     LERE,
     MINITI,
@@ -144,6 +152,10 @@ __all__ = [
     "BAMBARA_ALPHABET",
     "number_to_bambara",
     "bambara_to_number",
+    "normalize_numeric_expressions",
+    "find_numeric_spans",
+    "NumericSpan",
+    "KIND_PRECEDENCE",
     "normalize_numbers_in_text",
     "denormalize_numbers_in_text",
     "is_number_word",

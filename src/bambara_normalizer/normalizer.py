@@ -18,10 +18,7 @@ import re
 import unicodedata
 
 from .config import BambaraNormalizerConfig
-from .dates import normalize_dates_in_text
-from .measurements import normalize_measurements_in_text
-from .numbers import normalize_numbers_in_text
-from .times import normalize_times_in_text
+from .numeric import normalize_numeric_expressions
 
 
 class BambaraNormalizer:
@@ -246,17 +243,15 @@ class BambaraNormalizer:
         if self.config.normalize_legacy_orthography:
             text = self._normalize_legacy_orthography(text)
 
-        if self.config.expand_dates:
-            text = normalize_dates_in_text(text)
-
-        if self.config.expand_times:
-            text = normalize_times_in_text(text)
-
-        if self.config.expand_measurements:
-            text = normalize_measurements_in_text(text)
-
-        if self.config.expand_numbers:
-            text = normalize_numbers_in_text(text)
+        # One classification pass over every numeric span, so the result does not
+        # depend on the order dates/times/measurements/numbers are expanded in.
+        text = normalize_numeric_expressions(
+            text,
+            dates=self.config.expand_dates,
+            times=self.config.expand_times,
+            measurements=self.config.expand_measurements,
+            numbers=self.config.expand_numbers,
+        )
 
         if self.config.normalize_special_chars:
             text = self._normalize_special_chars(text)

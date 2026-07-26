@@ -17,6 +17,7 @@ from __future__ import annotations
 import re
 
 from .numbers import bambara_to_number, number_to_bambara
+from .spans import MEASUREMENT, NumericSpan, find_spans, substitute
 
 KILOGARAMU = "kilogaramu"
 GARAMU = "garamu"
@@ -247,6 +248,38 @@ def parse_measurement_string(s: str) -> tuple[float | int, str]:
     raise ValueError(f"Cannot parse measurement: {s}")
 
 
+def _build_measurement_pattern() -> re.Pattern:
+    abbrev_units = "|".join(re.escape(u) for u in UNIT_TO_BAMBARA.keys())
+    word_units = "|".join(re.escape(u) for u in UNIT_WORDS_TO_BAMBARA.keys())
+    all_units = f"{abbrev_units}|{word_units}"
+    return re.compile(rf"\b([\d]+(?:[.,]\d+)?)\s*({all_units})\b", re.IGNORECASE)
+
+
+MEASUREMENT_PATTERN = _build_measurement_pattern()
+
+
+def _replace_measurement(match: re.Match) -> str | None:
+    try:
+        value_str = match.group(1).replace(",", ".")
+        value = float(value_str)
+        if value == int(value):
+            value = int(value)
+        return measurement_to_bambara(value, match.group(2))
+    except (ValueError, KeyError):
+        return None
+
+
+def find_measurement_spans(text: str) -> list[NumericSpan]:
+    """
+    Find measurement patterns in text and their Bambara expansions.
+
+    Measurement spans lose against dates and times (a unit abbreviation can
+    otherwise swallow part of a clock time or duration) and win over bare
+    numbers.
+    """
+    return find_spans(text, MEASUREMENT_PATTERN, MEASUREMENT, _replace_measurement)
+
+
 def normalize_measurements_in_text(text: str) -> str:
     """
     Replace measurement patterns in text with Bambara.
@@ -269,24 +302,7 @@ def normalize_measurements_in_text(text: str) -> str:
         >>> normalize_measurements_in_text("So in bɛ 100 m")
         'So in bɛ mɛtɛrɛ kɛmɛ'
     """
-    abbrev_units = "|".join(re.escape(u) for u in UNIT_TO_BAMBARA.keys())
-    word_units = "|".join(re.escape(u) for u in UNIT_WORDS_TO_BAMBARA.keys())
-    all_units = f"{abbrev_units}|{word_units}"
-
-    pattern = rf"\b([\d]+(?:[.,]\d+)?)\s*({all_units})\b"
-
-    def replace_measurement(match: re.Match) -> str:
-        try:
-            value_str = match.group(1).replace(",", ".")
-            value = float(value_str)
-            if value == int(value):
-                value = int(value)
-            unit = match.group(2)
-            return measurement_to_bambara(value, unit)
-        except (ValueError, KeyError):
-            return match.group(0)
-
-    return re.sub(pattern, replace_measurement, text, flags=re.IGNORECASE)
+    return substitute(text, find_measurement_spans(text))
 
 
 def denormalize_measurements_in_text(text: str) -> str:

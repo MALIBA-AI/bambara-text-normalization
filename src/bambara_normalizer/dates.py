@@ -18,6 +18,7 @@ import re
 from datetime import date, datetime
 
 from .numbers import bambara_to_number, number_to_bambara
+from .spans import DATE, NumericSpan, find_spans, substitute
 
 DAYS_OF_WEEK = {
     0: "Tɛnɛn",
@@ -329,6 +330,43 @@ def bambara_to_month(name: str) -> int:
     return MONTHS_REVERSE[name_lower]
 
 
+DATE_FRENCH_PATTERN = re.compile(r"\b(\d{1,2})[-/](\d{1,2})[-/](\d{4})\b")
+DATE_ISO_PATTERN = re.compile(r"\b(\d{4})[-/](\d{1,2})[-/](\d{1,2})\b")
+
+
+def find_date_spans(text: str, include_kalo: bool = False) -> list[NumericSpan]:
+    """
+    Find date patterns in text and their Bambara expansions.
+
+    Recognizes DD-MM-YYYY / DD/MM/YYYY (French, tier 0) and YYYY-MM-DD (ISO,
+    tier 1). Dates are the most specific numeric shape, so these spans win over
+    any overlapping time, measurement, or number span.
+    """
+
+    def replace_date_french(match: re.Match) -> str | None:
+        try:
+            day = int(match.group(1))
+            month = int(match.group(2))
+            year = int(match.group(3))
+            return date_to_bambara(year, month, day, include_kalo=include_kalo)
+        except (ValueError, IndexError):
+            return None
+
+    def replace_date_iso(match: re.Match) -> str | None:
+        try:
+            year = int(match.group(1))
+            month = int(match.group(2))
+            day = int(match.group(3))
+            return date_to_bambara(year, month, day, include_kalo=include_kalo)
+        except (ValueError, IndexError):
+            return None
+
+    return [
+        *find_spans(text, DATE_FRENCH_PATTERN, DATE, replace_date_french),
+        *find_spans(text, DATE_ISO_PATTERN, DATE, replace_date_iso, tier=1),
+    ]
+
+
 def normalize_dates_in_text(text: str, include_kalo: bool = False) -> str:
     """
     Replace date patterns in text with Bambara.
@@ -348,32 +386,7 @@ def normalize_dates_in_text(text: str, include_kalo: bool = False) -> str:
         >>> normalize_dates_in_text("A bɛ 13-10-2024 la")
         'A bɛ Oktɔburu tile tan ni saba san waa fila ni mugan ni naani la'
     """
-
-    def replace_date_french(match: re.Match) -> str:
-        try:
-            day = int(match.group(1))
-            month = int(match.group(2))
-            year = int(match.group(3))
-            return date_to_bambara(year, month, day, include_kalo=include_kalo)
-        except (ValueError, IndexError):
-            return match.group(0)
-
-    def replace_date_iso(match: re.Match) -> str:
-        try:
-            year = int(match.group(1))
-            month = int(match.group(2))
-            day = int(match.group(3))
-            return date_to_bambara(year, month, day, include_kalo=include_kalo)
-        except (ValueError, IndexError):
-            return match.group(0)
-
-    pattern1 = r"\b(\d{1,2})[-/](\d{1,2})[-/](\d{4})\b"
-    text = re.sub(pattern1, replace_date_french, text)
-
-    pattern2 = r"\b(\d{4})[-/](\d{1,2})[-/](\d{1,2})\b"
-    text = re.sub(pattern2, replace_date_iso, text)
-
-    return text
+    return substitute(text, find_date_spans(text, include_kalo=include_kalo))
 
 
 def denormalize_dates_in_text(text: str) -> str:

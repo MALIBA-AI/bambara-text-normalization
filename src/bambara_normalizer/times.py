@@ -18,6 +18,7 @@ import re
 from datetime import time, timedelta
 
 from .numbers import bambara_to_number, number_to_bambara
+from .spans import TIME, NumericSpan, find_spans, substitute
 
 NEGE_KANYE = "Nɛgɛ kaɲɛ"
 SANGA = "sanga"
@@ -319,6 +320,47 @@ def bambara_to_duration(phrase: str) -> tuple[int, int, int]:
     return hours, minutes, seconds
 
 
+CLOCK_PATTERN = re.compile(r"\b(\d{1,2}):(\d{2})(?::(\d{2}))?\b")
+DURATION_PATTERN = re.compile(
+    r"\b\d+\s*h(?:\s*\d+\s*(?:min|m))?(?:\s*\d+\s*s(?:ec)?)?\b|\b\d+\s*min(?:\s*\d+\s*s(?:ec)?)?\b|\b\d+\s*s(?:ec)?\b",
+    re.IGNORECASE,
+)
+
+
+def _replace_clock_time(match: re.Match) -> str | None:
+    try:
+        hour = int(match.group(1))
+        minute = int(match.group(2))
+        second = int(match.group(3)) if match.group(3) else 0
+        return time_to_bambara(hour, minute, second)
+    except (ValueError, IndexError):
+        return None
+
+
+def _replace_duration(match: re.Match) -> str | None:
+    try:
+        hours, minutes, seconds = parse_duration_string(match.group(0))
+        if hours > 0 or minutes > 0 or seconds > 0:
+            return duration_to_bambara(hours, minutes, seconds)
+        return None
+    except (ValueError, IndexError):
+        return None
+
+
+def find_time_spans(text: str) -> list[NumericSpan]:
+    """
+    Find time patterns in text and their Bambara expansions.
+
+    Recognizes HH:MM / HH:MM:SS clock times (tier 0) and XhYmZs durations
+    (tier 1). Time spans lose against dates and win over measurements and bare
+    numbers.
+    """
+    return [
+        *find_spans(text, CLOCK_PATTERN, TIME, _replace_clock_time),
+        *find_spans(text, DURATION_PATTERN, TIME, _replace_duration, tier=1),
+    ]
+
+
 def normalize_times_in_text(text: str) -> str:
     """
     Replace time patterns in text with Bambara.
@@ -340,33 +382,7 @@ def normalize_times_in_text(text: str) -> str:
         >>> normalize_times_in_text("A tagara 1h30min")
         'A tagara lɛrɛ kelen ni miniti bi saba'
     """
-
-    def replace_clock_time(match: re.Match) -> str:
-        try:
-            hour = int(match.group(1))
-            minute = int(match.group(2))
-            second = int(match.group(3)) if match.group(3) else 0
-            return time_to_bambara(hour, minute, second)
-        except (ValueError, IndexError):
-            return match.group(0)
-
-    clock_pattern = r"\b(\d{1,2}):(\d{2})(?::(\d{2}))?\b"
-    text = re.sub(clock_pattern, replace_clock_time, text)
-
-    def replace_duration(match: re.Match) -> str:
-        try:
-            duration_str = match.group(0)
-            hours, minutes, seconds = parse_duration_string(duration_str)
-            if hours > 0 or minutes > 0 or seconds > 0:
-                return duration_to_bambara(hours, minutes, seconds)
-            return match.group(0)
-        except (ValueError, IndexError):
-            return match.group(0)
-
-    duration_pattern = r"\b\d+\s*h(?:\s*\d+\s*(?:min|m))?(?:\s*\d+\s*s(?:ec)?)?\b|\b\d+\s*min(?:\s*\d+\s*s(?:ec)?)?\b|\b\d+\s*s(?:ec)?\b"
-    text = re.sub(duration_pattern, replace_duration, text, flags=re.IGNORECASE)
-
-    return text
+    return substitute(text, find_time_spans(text))
 
 
 def denormalize_times_in_text(text: str) -> str:
