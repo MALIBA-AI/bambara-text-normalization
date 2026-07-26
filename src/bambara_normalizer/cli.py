@@ -30,9 +30,8 @@ from __future__ import annotations
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 
-import click
 import typer
 from rich.console import Console
 from rich.panel import Panel
@@ -386,7 +385,7 @@ def normalize(
         _echo(result)
 
 
-def _build_command() -> click.Command:
+def _build_command() -> Any:
     """The click command behind `app`, without click's empty env var hints."""
     command = typer.main.get_command(app)
     for param in command.params:
@@ -398,29 +397,23 @@ def _build_command() -> click.Command:
 def main(args: Optional[List[str]] = None) -> int:
     """Entry point for the `bambara-normalize` console script."""
     try:
-        code = _build_command().main(
-            args=args, prog_name="bambara-normalize", standalone_mode=False
-        )
-    except click.UsageError as exc:
-        err_console.print(f"[bold red]Error:[/bold red] {exc.format_message()}", soft_wrap=True)
-        err_console.print("Try [bold]bambara-normalize --help[/bold] for help.")
-        return exc.exit_code
-    except click.ClickException as exc:
-        err_console.print(f"[bold red]Error:[/bold red] {exc.format_message()}", soft_wrap=True)
-        return exc.exit_code
-    except click.exceptions.Abort:
+        _build_command().main(args=args, prog_name="bambara-normalize")
+    except SystemExit as exit_signal:
+        code = exit_signal.code
+        return code if isinstance(code, int) else 0
+    except KeyboardInterrupt:
         err_console.print("[yellow]Aborted.[/yellow]")
         return 130
-    except FileNotFoundError as exc:
+    except FileNotFoundError as error:
         err_console.print(
-            f"[bold red]Error:[/bold red] File not found: {exc.filename or exc}", soft_wrap=True
+            f"[bold red]Error:[/bold red] File not found: {error.filename or error}", soft_wrap=True
         )
         return 1
-    except Exception as exc:
-        err_console.print(f"[bold red]Error:[/bold red] {exc}", soft_wrap=True)
+    except Exception as error:
+        err_console.print(f"[bold red]Error:[/bold red] {error}", soft_wrap=True)
         return 1
 
-    return code if isinstance(code, int) else 0
+    return 0
 
 
 if __name__ == "__main__":
