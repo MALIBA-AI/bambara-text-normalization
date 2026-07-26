@@ -1,5 +1,7 @@
 """Tests for the Typer command-line interface."""
 
+import re
+
 import pytest
 
 typer = pytest.importorskip("typer")
@@ -11,52 +13,61 @@ from bambara_normalizer.cli import app, main  # noqa: E402
 
 runner = CliRunner()
 
+# Typer forces colored output when GITHUB_ACTIONS is set, so assertions on the
+# rendered help have to look past the escape sequences.
+ANSI = re.compile(r"\x1b\[[0-9;]*[a-zA-Z]")
+
 
 def invoke(*args, **kwargs):
     return runner.invoke(app, list(args), **kwargs)
+
+
+def plain(text):
+    """CLI output without styling."""
+    return ANSI.sub("", text)
 
 
 class TestNormalizeCommand:
     def test_expands_contractions_by_default(self):
         result = invoke("B'a fɔ́")
         assert result.exit_code == 0
-        assert result.stdout.strip() == "bɛ a fɔ́"
+        assert plain(result.stdout).strip() == "bɛ a fɔ́"
 
     def test_contract_mode(self):
         result = invoke("--mode", "contract", "bɛ a fɔ")
         assert result.exit_code == 0
-        assert result.stdout.strip() == "b'a fɔ"
+        assert plain(result.stdout).strip() == "b'a fɔ"
 
     def test_wer_preset(self):
         result = invoke("--preset", "wer", "K'a fɔ́!")
         assert result.exit_code == 0
-        assert result.stdout.strip() == "ka a fɔ"
+        assert plain(result.stdout).strip() == "ka a fɔ"
 
     def test_reads_stdin(self):
         result = invoke(input="B'a fɔ́\n")
         assert result.exit_code == 0
-        assert result.stdout.strip() == "bɛ a fɔ́"
+        assert plain(result.stdout).strip() == "bɛ a fɔ́"
 
     def test_joins_unquoted_words(self):
         result = invoke("B'a", "fɔ́")
         assert result.exit_code == 0
-        assert result.stdout.strip() == "bɛ a fɔ́"
+        assert plain(result.stdout).strip() == "bɛ a fɔ́"
 
     def test_expand_numbers_flag(self):
         result = invoke("--expand-numbers", "A ye 42 di")
         assert result.exit_code == 0
-        assert "bi naani ni fila" in result.stdout
+        assert "bi naani ni fila" in plain(result.stdout)
 
     def test_version(self):
         result = invoke("--version")
         assert result.exit_code == 0
-        assert __version__ in result.stdout
+        assert __version__ in plain(result.stdout)
 
     def test_help_lists_the_options(self):
         result = invoke("--help")
         assert result.exit_code == 0
-        assert "--preset" in result.stdout
-        assert "--evaluate" in result.stdout
+        assert "--preset" in plain(result.stdout)
+        assert "--evaluate" in plain(result.stdout)
 
 
 class TestFileProcessing:
@@ -67,7 +78,7 @@ class TestFileProcessing:
         result = invoke("--input", str(source))
 
         assert result.exit_code == 0
-        assert result.stdout.splitlines() == ["bɛ a fɔ́", "ka a ta"]
+        assert plain(result.stdout).splitlines() == ["bɛ a fɔ́", "ka a ta"]
 
     def test_writes_to_output_file(self, tmp_path):
         source = tmp_path / "corpus.txt"
@@ -102,8 +113,8 @@ class TestEvaluate:
         result = invoke("--evaluate", str(reference), str(hypothesis))
 
         assert result.exit_code == 0
-        assert "WER" in result.stdout
-        assert "CER" in result.stdout
+        assert "WER" in plain(result.stdout)
+        assert "CER" in plain(result.stdout)
 
     def test_detailed_adds_per_utterance_rows(self, tmp_path):
         reference, hypothesis = self._pair(tmp_path)
@@ -111,7 +122,7 @@ class TestEvaluate:
         result = invoke("--evaluate", "--detailed", str(reference), str(hypothesis))
 
         assert result.exit_code == 0
-        assert "Per-utterance" in result.stdout
+        assert "Per-utterance" in plain(result.stdout)
 
     def test_requires_two_files(self, tmp_path):
         reference, _ = self._pair(tmp_path)
@@ -132,7 +143,7 @@ class TestEvaluate:
 class TestMainEntryPoint:
     def test_returns_zero_on_success(self, capsys):
         assert main(["--preset", "wer", "K'a fɔ́!"]) == 0
-        assert capsys.readouterr().out.strip() == "ka a fɔ"
+        assert plain(capsys.readouterr().out).strip() == "ka a fɔ"
 
     def test_returns_usage_error_code(self):
         assert main(["--preset", "bogus", "x"]) == 2
