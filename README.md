@@ -481,6 +481,45 @@ Literal translation: "kilogram five"
 | Hectare | ha | ɛkitari |
 | Square meter | m² | mɛtɛrɛ kare |
 
+---
+
+## Numeric Expansion (dates, times, measurements, numbers)
+
+Dates, times, measurements and bare numbers all compete for the same digits. The normalizer resolves them in a **single classification pass**: every numeric span of the text is claimed by exactly one kind, and only then is anything rewritten. Expansion therefore does not depend on the order the expanders run in.
+
+Precedence runs from the most specific shape to the most generic:
+
+```
+date > time > measurement > number
+```
+
+```python
+from bambara_normalizer import find_numeric_spans, normalize_numeric_expressions
+
+text = "Ne taara sugu la 24-12-2025 la, 10:45 waati, ne ye tulu 6 l san ani sukaro 10 kg."
+
+[(s.source, s.kind) for s in find_numeric_spans(text)]
+# => [('24-12-2025', 'date'), ('10:45', 'time'), ('6 l', 'measurement'), ('10 kg', 'measurement')]
+
+normalize_numeric_expressions(text)
+# => "Ne taara sugu la Desanburu tile mugan ni naani san baa fila ni mugan ni duuru la, ..."
+```
+
+A span keeps its kind whether or not that kind is enabled, so partial configurations are safe: disabling one expander never lets another one mis-read its digits.
+
+```python
+# expand_numbers=True, expand_dates=False: the date is left alone, not split into three numbers
+normalize_numeric_expressions("A bɛ 24-12-2025 la ni 3", dates=False)
+# => "A bɛ 24-12-2025 la ni saba"
+
+normalize("A bɛ 24-12-2025 la ni 3", expand_numbers=True, expand_dates=False, remove_punctuation=False)
+# => "a bɛ 24-12-2025 la ni saba"
+```
+
+The single-kind functions (`normalize_dates_in_text`, `normalize_times_in_text`, `normalize_measurements_in_text`, `normalize_numbers_in_text`) each expand only their own shape and are unaware of the others — `normalize_numbers_in_text` will happily expand the digits of a date. Use `normalize_numeric_expressions` (or the normalizer, which calls it) for mixed text.
+
+**Not resolved by precedence:** genuinely ambiguous shapes. `10-45` could be a date fragment or a ratio, and `24-12-2025` is read as DD-MM-YYYY, never MM-DD-YYYY. Precedence makes the choice *deterministic and documented*, not correct in every context.
+
 ## ASR Evaluation Framework
 
 ### Quick Evaluation
