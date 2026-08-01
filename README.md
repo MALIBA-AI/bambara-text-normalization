@@ -14,6 +14,11 @@
     <a href="#references">References</a>
 </p>
 
+<!-- prettier-ignore -->
+<p align="center">
+    <a href="https://pypi.org/project/djelia/"><img src="https://img.shields.io/pypi/v/bambara-text-normalizer.svg?label=pypi%20(stable)" alt="PyPI version"></a>
+</p>
+
 ---
 
 ## Purpose
