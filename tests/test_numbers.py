@@ -62,6 +62,18 @@ class TestNumberTextNormalization:
         assert denormalize_numbers_in_text("A ye duuru wari di") == "A ye 5 wari di"
         assert denormalize_numbers_in_text("Mɔgɔ kɛmɛ nana") == "Mɔgɔ 100 nana"
 
+    def test_trailing_punctuation_is_not_a_decimal_separator(self):
+        assert normalize_numbers_in_text("Ne wolo la san 2020.") == (
+            "Ne wolo la san waa fila ni mugan."
+        )
+        assert normalize_numbers_in_text("A ye 42, 43 di") == (
+            "A ye bi naani ni fila, bi naani ni saba di"
+        )
+
+    def test_separator_between_digits_is_kept(self):
+        assert normalize_numbers_in_text("A ye 3.5 di") == "A ye saba tomi duuru di"
+        assert normalize_numbers_in_text("Mɔgɔ 1,000 nana") == "Mɔgɔ waa kelen nana"
+
 
 class TestNumberNormalizerIntegration:
     def test_with_expand_numbers(self):

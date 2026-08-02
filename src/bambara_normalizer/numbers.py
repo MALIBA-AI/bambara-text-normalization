@@ -63,6 +63,51 @@ DECIMAL_SEP = "tomi"
 CONNECTOR = "ni"
 
 
+NUMBER_PATTERN = re.compile(r"\d+(?:[.,]\d+)*")
+
+UNIT_VALUES = {word: i for i, word in enumerate(UNITS)}
+UNIT_VALUES.update(
+    {
+        "kelenn": 1,
+        "segin": 8,
+        "kɔnɔtɔn": 9,
+    }
+)
+
+TENS_VALUES = {
+    "tan": 10,
+    "mugan": 20,
+    "bi saba": 30,
+    "bi naani": 40,
+    "bi duuru": 50,
+    "bi wɔɔrɔ": 60,
+    "bi wolonwula": 70,
+    "bi wolonfila": 70,
+    "bi seegin": 80,
+    "bi segin": 80,
+    "bi kɔnɔntɔn": 90,
+    "bi kɔnɔtɔn": 90,
+}
+
+MULTIPLIER_VALUES = {
+    "kɛmɛ": 100,
+    "keme": 100,
+    "waa": 1000,
+    "wa": 1000,
+    'baa': 1000,
+    "milyɔn": 1_000_000,
+    "milyon": 1_000_000,
+}
+
+NUMBER_TOKENS = (
+    set(UNITS)
+    | set(UNIT_VALUES.keys())
+    | {"tan", "mugan", "bi"}
+    | set(MULTIPLIER_VALUES.keys())
+    | {CONNECTOR, DECIMAL_SEP, "tomi"}
+)
+
+
 def number_to_bambara(n: int | float | str) -> str:
     """
     Convert a number to Bambara words.
@@ -181,46 +226,6 @@ def _digits_to_bambara(digits: str) -> str:
     return " ".join(UNITS[int(d)] for d in digits)
 
 
-UNIT_VALUES = {word: i for i, word in enumerate(UNITS)}
-UNIT_VALUES.update(
-    {
-        "kelenn": 1,
-        "segin": 8,
-        "kɔnɔtɔn": 9,
-    }
-)
-
-TENS_VALUES = {
-    "tan": 10,
-    "mugan": 20,
-    "bi saba": 30,
-    "bi naani": 40,
-    "bi duuru": 50,
-    "bi wɔɔrɔ": 60,
-    "bi wolonwula": 70,
-    "bi wolonfila": 70,
-    "bi seegin": 80,
-    "bi segin": 80,
-    "bi kɔnɔntɔn": 90,
-    "bi kɔnɔtɔn": 90,
-}
-
-MULTIPLIER_VALUES = {
-    "kɛmɛ": 100,
-    "keme": 100,
-    "waa": 1000,
-    "wa": 1000,
-    "milyɔn": 1_000_000,
-    "milyon": 1_000_000,
-}
-
-NUMBER_TOKENS = (
-    set(UNITS)
-    | set(UNIT_VALUES.keys())
-    | {"tan", "mugan", "bi"}
-    | set(MULTIPLIER_VALUES.keys())
-    | {CONNECTOR, DECIMAL_SEP, "tomi"}
-)
 
 
 def bambara_to_number(phrase: str) -> int | float:
@@ -345,7 +350,6 @@ def _parse_decimal_digits(phrase: str) -> str:
     return "".join(digits) if digits else "0"
 
 
-NUMBER_PATTERN = re.compile(r"\d[\d.,]*")
 
 
 def _replace_number(match: re.Match) -> str | None:
