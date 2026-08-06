@@ -37,7 +37,14 @@ This tool serves **two complementary purposes** for Bambara language processing:
 ## Installation
 
 ```bash
+# Core library only
 pip install bambara-text-normalizer
+
+# Install with CLI support
+pip install "bambara-text-normalizer[cli]"
+
+# Install everything
+pip install "bambara-text-normalizer[all]"
 ```
 ```bash
 pip install git+https://github.com/sudoping01/bambara-text-normalization.git

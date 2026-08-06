@@ -32,11 +32,19 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, List, Optional
 
-import typer
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
-from rich.text import Text
+try:
+    import typer
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.table import Table
+    from rich.text import Text
+except ImportError:
+    print(
+        "CLI dependencies not installed. Run:\n"
+        "    pip install 'bambara-text-normalizer[cli]'",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 from . import __version__
 from .evaluation import BambaraEvaluator
