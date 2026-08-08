@@ -16,6 +16,14 @@ __author__ = "sudoping01"
 __license__ = "MIT"
 
 
+from .arithmetic import (
+    OPERATOR_ALIASES,
+    arithmetic_to_bambara,
+    find_arithmetic_spans,
+    format_arithmetic_bambara,
+    is_arithmetic_operator,
+    normalize_arithmetic_in_text,
+)
 from .dates import (
     DAYS_OF_WEEK,
     MONTHS,
@@ -160,6 +168,12 @@ __all__ = [
     "denormalize_numbers_in_text",
     "is_number_word",
     "number_to_ordinal",
+    "arithmetic_to_bambara",
+    "format_arithmetic_bambara",
+    "normalize_arithmetic_in_text",
+    "find_arithmetic_spans",
+    "is_arithmetic_operator",
+    "OPERATOR_ALIASES",
     "date_to_bambara",
     "bambara_to_date",
     "format_date_bambara",
