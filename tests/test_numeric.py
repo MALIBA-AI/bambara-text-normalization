@@ -12,11 +12,15 @@ from bambara_normalizer import (
     normalize_numeric_expressions,
 )
 
-MIXED_TEXT = "Ne taara sugu la 24-12-2025 la, 10:45 waati, ne ye tulu 6 l san ani sukaro 10 kg."
+MIXED_TEXT = (
+    "Ne taara sugu la 24-12-2025 la, 10:45 waati, ne ye tulu 6 l san ani sukaro 10 kg, "
+    "wari 12 + 8 = 20."
+)
 
 FLAG_FOR_KIND = {
     "date": "dates",
     "time": "times",
+    "arithmetic": "arithmetic",
     "measurement": "measurements",
     "number": "numbers",
 }
@@ -35,6 +39,7 @@ class TestSpanClassification:
             ("10:45", "time"),
             ("6 l", "measurement"),
             ("10 kg", "measurement"),
+            ("12 + 8 = 20", "arithmetic"),
         ]
 
     def test_spans_do_not_overlap(self):
@@ -91,6 +96,9 @@ class TestPartialConfigGuards:
     def test_disabled_measurements_are_not_expanded_as_numbers(self):
         assert normalize_numeric_expressions("A ye 6 l san", measurements=False) == "A ye 6 l san"
 
+    def test_disabled_arithmetic_is_not_expanded_as_numbers(self):
+        assert normalize_numeric_expressions("A ko 2 + 2", arithmetic=False) == "A ko 2 + 2"
+
     def test_disabled_kind_still_lets_others_through(self):
         result = normalize_numeric_expressions("A bɛ 24-12-2025 la ni 3", dates=False)
         assert result == "A bɛ 24-12-2025 la ni saba"
@@ -98,7 +106,12 @@ class TestPartialConfigGuards:
     def test_all_disabled_leaves_text_untouched(self):
         assert (
             normalize_numeric_expressions(
-                MIXED_TEXT, dates=False, times=False, measurements=False, numbers=False
+                MIXED_TEXT,
+                dates=False,
+                times=False,
+                arithmetic=False,
+                measurements=False,
+                numbers=False,
             )
             == MIXED_TEXT
         )
@@ -113,6 +126,7 @@ class TestNormalizerIntegration:
         assert "nɛgɛ kaɲɛ" in result
         assert "litiri wɔɔrɔ" in result
         assert "kilogaramu tan" in result
+        assert "tan ni fila fara seegin kan" in result
         assert not any(char.isdigit() for char in result)
 
     def test_numbers_only_config_protects_other_kinds(self):
@@ -120,6 +134,7 @@ class TestNormalizerIntegration:
             expand_numbers=True,
             expand_dates=False,
             expand_times=False,
+            expand_arithmetic=False,
             expand_measurements=False,
             remove_punctuation=False,
         )
@@ -128,3 +143,4 @@ class TestNormalizerIntegration:
         assert "24-12-2025" in result
         assert "10:45" in result
         assert "6 l" in result
+        assert "12 + 8 = 20" in result

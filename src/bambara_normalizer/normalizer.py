@@ -249,6 +249,7 @@ class BambaraNormalizer:
             text,
             dates=self.config.expand_dates,
             times=self.config.expand_times,
+            arithmetic=self.config.expand_arithmetic,
             measurements=self.config.expand_measurements,
             numbers=self.config.expand_numbers,
         )

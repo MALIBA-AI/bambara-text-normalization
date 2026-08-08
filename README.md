@@ -93,6 +93,7 @@ text = normalize(
     expand_measurements=False, 
     expand_numbers=False,  
     expand_times=False,            
+    expand_arithmetic=False,
     remove_diacritics_except_tones=False,  
     handle_french_loanwords=True,   
     strip_repetitions=False,       
@@ -495,23 +496,85 @@ Literal translation: "kilogram five"
 
 ---
 
-## Numeric Expansion (dates, times, measurements, numbers)
+## Arithmetic Normalization
 
-Dates, times, measurements and bare numbers all compete for the same digits. The normalizer resolves them in a **single classification pass**: every numeric span of the text is claimed by exactly one kind, and only then is anything rewritten. Expansion therefore does not depend on the order the expanders run in.
+Operators are read the way they are spoken, so a TTS voice does not have to guess at `+`, `-`, `×`, `÷` and `=`.
+
+### With Normalizer
+```python
+from bambara_normalizer import normalize
+
+normalize("A ko 2 + 2 = 4", expand_arithmetic=True)   # => "a ko fila fara fila kan o ye naani ye"
+normalize("A ko 2 + 2 = 4", expand_arithmetic=False)  # => "a ko 2 + 2 = 4"
+
+# WER preset has expand_arithmetic=True by default
+normalize("A ko 5 × 3", preset="wer")  # => "a ko duuru siɲɛ saba"
+```
+
+### Arithmetic to Bambara (Text Normalization)
+```python
+from bambara_normalizer import arithmetic_to_bambara, format_arithmetic_bambara, normalize_arithmetic_in_text
+
+arithmetic_to_bambara(2, "+", 2)             # => "fila fara fila kan"
+arithmetic_to_bambara(8, "-", 5)             # => "duuru bɔ seegin na"
+arithmetic_to_bambara(5, "×", 3)             # => "duuru siɲɛ saba"
+arithmetic_to_bambara(10, "÷", 2)            # => "tan tila fila la"
+arithmetic_to_bambara(2, "+", 2, result=4)   # => "fila fara fila kan, o ye naani ye"
+
+# From string format
+format_arithmetic_bambara("2+2")             # => "fila fara fila kan"
+format_arithmetic_bambara("2 + 2 = 4")       # => "fila fara fila kan, o ye naani ye"
+
+# In text
+normalize_arithmetic_in_text("A ko 2 + 2 = 4")
+# => "A ko fila fara fila kan, o ye naani ye"
+```
+
+### Operators
+
+| Operation | Symbols | Bambara | Example |
+|-----------|---------|---------|---------|
+| Addition | `+` | `fara ... kan` | **2 + 2** => `fila fara fila kan` |
+| Subtraction | `-` `−` | `bɔ ... la` | **8 - 5** => `duuru bɔ seegin na` |
+| Multiplication | `×` `*` `x` | `siɲɛ` | **5 × 3** => `duuru siɲɛ saba` |
+| Division | `÷` `/` | `tila ... la` | **10 / 2** => `tan tila fila la` |
+| Result | `=` | `o ye ... ye` | **2 + 2 = 4** => `fila fara fila kan, o ye naani ye` |
+
+Subtraction takes the subtrahend *out of* the total, so the operands are spoken in the reverse of the written order: **8 - 5** is "five taken from eight". The closing postposition `la` surfaces as `na` after a nasal — `seegin na` but `fila la`.
+
+An `x` only multiplies when it stands alone between spaces, so no word is ever cut in half: `5 x 3` is an operation, `5x3` is left as it is.
+
+### What is left alone
+
+Normalization fails open: anything that is not a complete two-operand operation is returned untouched.
+
+```python
+normalize_arithmetic_in_text("Telefɔni 20-22-33-44")  # => "Telefɔni 20-22-33-44"   (three or more operands)
+normalize_arithmetic_in_text("A wolola 2020-2021 la") # => "A wolola 2020-2021 la"  (year range)
+normalize_arithmetic_in_text("sugu la 10/2025")       # => "sugu la 10/2025"        (month and year)
+```
+
+The year guard only covers the tight form. Write the spaces when you mean the operation: `2021 - 2020` is subtraction.
+
+---
+
+## Numeric Expansion (dates, times, arithmetic, measurements, numbers)
+
+Dates, times, arithmetic, measurements and bare numbers all compete for the same digits. The normalizer resolves them in a **single classification pass**: every numeric span of the text is claimed by exactly one kind, and only then is anything rewritten. Expansion therefore does not depend on the order the expanders run in.
 
 Precedence runs from the most specific shape to the most generic:
 
 ```
-date > time > measurement > number
+date > time > arithmetic > measurement > number
 ```
 
 ```python
 from bambara_normalizer import find_numeric_spans, normalize_numeric_expressions
 
-text = "Ne taara sugu la 24-12-2025 la, 10:45 waati, ne ye tulu 6 l san ani sukaro 10 kg."
+text = "Ne taara sugu la 24-12-2025 la, 10:45 waati, ne ye tulu 6 l san, wari 12 + 8 = 20."
 
 [(s.source, s.kind) for s in find_numeric_spans(text)]
-# => [('24-12-2025', 'date'), ('10:45', 'time'), ('6 l', 'measurement'), ('10 kg', 'measurement')]
+# => [('24-12-2025', 'date'), ('10:45', 'time'), ('6 l', 'measurement'), ('12 + 8 = 20', 'arithmetic')]
 
 normalize_numeric_expressions(text)
 # => "Ne taara sugu la Desanburu tile mugan ni naani san baa fila ni mugan ni duuru la, ..."
@@ -528,7 +591,7 @@ normalize("A bɛ 24-12-2025 la ni 3", expand_numbers=True, expand_dates=False, r
 # => "a bɛ 24-12-2025 la ni saba"
 ```
 
-The single-kind functions (`normalize_dates_in_text`, `normalize_times_in_text`, `normalize_measurements_in_text`, `normalize_numbers_in_text`) each expand only their own shape and are unaware of the others — `normalize_numbers_in_text` will happily expand the digits of a date. Use `normalize_numeric_expressions` (or the normalizer, which calls it) for mixed text.
+The single-kind functions (`normalize_dates_in_text`, `normalize_times_in_text`, `normalize_arithmetic_in_text`, `normalize_measurements_in_text`, `normalize_numbers_in_text`) each expand only their own shape and are unaware of the others — `normalize_numbers_in_text` will happily expand the digits of a date. Use `normalize_numeric_expressions` (or the normalizer, which calls it) for mixed text.
 
 **Not resolved by precedence:** genuinely ambiguous shapes. `10-45` could be a date fragment or a ratio, and `24-12-2025` is read as DD-MM-YYYY, never MM-DD-YYYY. Precedence makes the choice *deterministic and documented*, not correct in every context.
 
@@ -757,6 +820,7 @@ echo "B'a fɔ́" | bambara-normalize
 | `--detailed` | With `--evaluate`, add a per-utterance table |
 | `--preserve-tones` | Keep tone marks |
 | `--expand-numbers` | Expand digits to Bambara words |
+| `--expand-arithmetic` | Read arithmetic expressions aloud (`2 + 2 = 4`) |
 | `--debug` | Print the intermediate normalization steps to stderr |
 | `--plain` | Unstyled output, even on a terminal |
 | `-v, --version` | Print the version |

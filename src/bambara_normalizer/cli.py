@@ -137,6 +137,7 @@ def normalize_text(
     mode: str = "expand",
     preserve_tones: bool = False,
     expand_numbers: bool = False,
+    expand_arithmetic: bool = False,
     debug: bool = False,
 ) -> str:
     """Normalize a single string with the given preset and overrides."""
@@ -145,6 +146,8 @@ def normalize_text(
         kwargs["preserve_tones"] = True
     if expand_numbers:
         kwargs["expand_numbers"] = True
+    if expand_arithmetic:
+        kwargs["expand_arithmetic"] = True
 
     normalizer = create_normalizer(preset, mode=mode, **kwargs)
 
@@ -313,6 +316,9 @@ def normalize(
     expand_numbers: bool = typer.Option(
         False, "--expand-numbers", help="Expand digits to Bambara words."
     ),
+    expand_arithmetic: bool = typer.Option(
+        False, "--expand-arithmetic", help="Read arithmetic expressions aloud (2 + 2 = 4)."
+    ),
     debug: bool = typer.Option(False, "--debug", help="Show intermediate normalization steps."),
     plain: bool = typer.Option(False, "--plain", help="Unstyled output, even on a terminal."),
     version: bool = typer.Option(
@@ -345,6 +351,8 @@ def normalize(
         overrides["preserve_tones"] = True
     if expand_numbers:
         overrides["expand_numbers"] = True
+    if expand_arithmetic:
+        overrides["expand_arithmetic"] = True
 
     normalizer = create_normalizer(preset.value, mode=mode.value, **overrides)
 
