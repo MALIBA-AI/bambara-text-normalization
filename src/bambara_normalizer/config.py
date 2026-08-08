@@ -44,6 +44,7 @@ class BambaraNormalizerConfig:
         normalize_apostrophes: Standardize apostrophe variants
         normalize_special_chars: Handle variant forms of ɛ, ɔ, ɲ, ŋ
         expand_numbers: Convert digits to Bambara words
+        expand_arithmetic: Convert arithmetic expressions (2 + 2 = 4) to Bambara
         expand_dates: Convert date patterns (DD-MM-YYYY) to Bambara
         remove_diacritics_except_tones: Remove non-tonal diacritics
         handle_french_loanwords: Apply French word normalization
@@ -61,6 +62,7 @@ class BambaraNormalizerConfig:
     normalize_apostrophes: bool = True
     normalize_special_chars: bool = True
     expand_numbers: bool = False
+    expand_arithmetic: bool = False
     expand_dates: bool = False
     expand_times: bool = False
     expand_measurements: bool = False
@@ -94,6 +96,7 @@ class BambaraNormalizerConfig:
             normalize_apostrophes=True,
             normalize_special_chars=True,
             expand_numbers=True,
+            expand_arithmetic=True,
             expand_measurements=True,
             expand_dates=True,
             expand_times=True,
@@ -115,6 +118,7 @@ class BambaraNormalizerConfig:
             normalize_apostrophes=True,
             normalize_special_chars=True,
             expand_numbers=True,
+            expand_arithmetic=True,
             expand_dates=True,
             expand_times=True,
             remove_diacritics_except_tones=True,
@@ -135,6 +139,7 @@ class BambaraNormalizerConfig:
             normalize_apostrophes=True,
             normalize_special_chars=True,
             expand_numbers=False,
+            expand_arithmetic=False,
             expand_dates=False,
             expand_times=False,
             remove_diacritics_except_tones=False,
@@ -155,6 +160,7 @@ class BambaraNormalizerConfig:
             normalize_apostrophes=True,
             normalize_special_chars=False,
             expand_numbers=False,
+            expand_arithmetic=False,
             expand_dates=False,
             expand_times=False,
             remove_diacritics_except_tones=False,

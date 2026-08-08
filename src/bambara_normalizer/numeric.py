@@ -14,10 +14,11 @@
 """
 Single-pass expansion of every numeric expression in a text.
 
-Dates, times, measurements, and numbers are recognized in one classification
-step, and each numeric span of the text is claimed by exactly one of them
-(precedence: date > time > measurement > number). Only then is anything
-rewritten, so the result never depends on the order the expanders are invoked in.
+Dates, times, arithmetic, measurements, and numbers are recognized in one
+classification step, and each numeric span of the text is claimed by exactly one
+of them (precedence: date > time > arithmetic > measurement > number). Only then
+is anything rewritten, so the result never depends on the order the expanders are
+invoked in.
 
 A span classified as a date is a date whether or not date expansion is enabled:
 disabling `dates` leaves "24-12-2025" alone instead of letting the number
@@ -28,10 +29,12 @@ gives the same text as applying them together.
 
 from __future__ import annotations
 
+from .arithmetic import find_arithmetic_spans
 from .dates import find_date_spans
 from .measurements import find_measurement_spans
 from .numbers import find_number_spans
 from .spans import (
+    ARITHMETIC,
     DATE,
     KIND_PRECEDENCE,
     MEASUREMENT,
@@ -66,6 +69,7 @@ def normalize_numeric_expressions(
     text: str,
     dates: bool = True,
     times: bool = True,
+    arithmetic: bool = True,
     measurements: bool = True,
     numbers: bool = True,
     include_kalo: bool = False,
@@ -77,6 +81,7 @@ def normalize_numeric_expressions(
         text: Input text
         dates: Expand date spans
         times: Expand time and duration spans
+        arithmetic: Expand arithmetic expressions
         measurements: Expand measurement spans
         numbers: Expand bare numerals
         include_kalo: Include "kalo" after month names in date expansions
@@ -92,7 +97,13 @@ def normalize_numeric_expressions(
         >>> normalize_numeric_expressions("A bɛ 24-12-2025 la", dates=False)
         'A bɛ 24-12-2025 la'
     """
-    enabled = {DATE: dates, TIME: times, MEASUREMENT: measurements, NUMBER: numbers}
+    enabled = {
+        DATE: dates,
+        TIME: times,
+        ARITHMETIC: arithmetic,
+        MEASUREMENT: measurements,
+        NUMBER: numbers,
+    }
 
     scanned = _kinds_to_scan(enabled)
     if not scanned:
@@ -120,6 +131,7 @@ def _candidates(text: str, kinds: tuple[str, ...], include_kalo: bool) -> list[N
     finders = {
         DATE: lambda: find_date_spans(text, include_kalo=include_kalo),
         TIME: lambda: find_time_spans(text),
+        ARITHMETIC: lambda: find_arithmetic_spans(text),
         MEASUREMENT: lambda: find_measurement_spans(text),
         NUMBER: lambda: find_number_spans(text),
     }
