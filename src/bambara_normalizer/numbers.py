@@ -79,6 +79,10 @@ NUMBER_PATTERN = re.compile(rf"(?:{GROUPED_THOUSANDS}|\d+(?:[.,]\d+)*)")
 # three digits ("1,500") stays a thousands group, as it always has.
 DECIMAL_COMMA_PATTERN = re.compile(r"\d+,(?:\d{1,2}|\d{4,})")
 
+# The dot mirrors the comma: a single dot before exactly three digits groups thousands,
+# as in "1.000 FCFA". Any other length after it ("3.5", "12.25") is a decimal.
+DOT_THOUSANDS_PATTERN = re.compile(r"\d{1,3}\.\d{3}")
+
 UNIT_VALUES = {word: i for i, word in enumerate(UNITS)}
 UNIT_VALUES.update(
     {
@@ -160,6 +164,8 @@ def number_to_bambara(n: int | float | str) -> str:
 
         if DECIMAL_COMMA_PATTERN.fullmatch(n) or (space_grouped and n.count(",") == 1):
             n = n.replace(",", ".")
+        elif DOT_THOUSANDS_PATTERN.fullmatch(n):
+            n = n.replace(".", "")
         elif n.count(".") > 1 or (n.count(",") > 0 and n.count(".") == 0):
             n = n.replace(".", "").replace(",", "")
         elif "," in n:
