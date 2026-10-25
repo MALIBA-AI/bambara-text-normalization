@@ -239,3 +239,13 @@ class TestMeasurementRoundTrip:
             bambara = measurement_to_bambara(*original)
             back = bambara_to_measurement(bambara)
             assert back == original, f"Round trip failed for {original}"
+
+
+class TestGroupedMeasurementValue:
+    def test_space_grouped_value(self):
+        assert normalize_measurements_in_text("malo 1 000 kg") == "malo kilogaramu waa kelen"
+
+    def test_space_grouped_value_with_decimal(self):
+        assert normalize_measurements_in_text("A ye 1 000,5 kg") == (
+            "A ye kilogaramu waa kelen tomi duuru"
+        )

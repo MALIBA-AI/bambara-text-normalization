@@ -16,7 +16,12 @@ from __future__ import annotations
 
 import re
 
-from .numbers import bambara_to_number, number_to_bambara
+from .numbers import (
+    GROUP_SEPARATOR_PATTERN,
+    GROUPED_THOUSANDS,
+    bambara_to_number,
+    number_to_bambara,
+)
 from .spans import MEASUREMENT, NumericSpan, find_spans, substitute
 
 KILOGARAMU = "kilogaramu"
@@ -252,7 +257,8 @@ def _build_measurement_pattern() -> re.Pattern:
     abbrev_units = "|".join(re.escape(u) for u in UNIT_TO_BAMBARA.keys())
     word_units = "|".join(re.escape(u) for u in UNIT_WORDS_TO_BAMBARA.keys())
     all_units = f"{abbrev_units}|{word_units}"
-    return re.compile(rf"\b([\d]+(?:[.,]\d+)?)\s*({all_units})\b", re.IGNORECASE)
+    value = rf"{GROUPED_THOUSANDS}|\d+(?:[.,]\d+)?"
+    return re.compile(rf"\b({value})\s*({all_units})\b", re.IGNORECASE)
 
 
 MEASUREMENT_PATTERN = _build_measurement_pattern()
@@ -260,7 +266,7 @@ MEASUREMENT_PATTERN = _build_measurement_pattern()
 
 def _replace_measurement(match: re.Match) -> str | None:
     try:
-        value_str = match.group(1).replace(",", ".")
+        value_str = GROUP_SEPARATOR_PATTERN.sub("", match.group(1)).replace(",", ".")
         value = float(value_str)
         if value == int(value):
             value = int(value)

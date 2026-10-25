@@ -63,7 +63,21 @@ DECIMAL_SEP = "tomi"
 CONNECTOR = "ni"
 
 
-NUMBER_PATTERN = re.compile(r"\d+(?:[.,]\d+)*")
+# French typography groups thousands with a space, a no-break space or a narrow
+# no-break space: "1 000 000". Every group after the first is exactly three digits,
+# which is what keeps "tile 1 2 3" three separate numbers. The decimal tail belongs
+# to the same token, so "1 000,5" is never split into "1 000" and a stray ",5".
+GROUP_SEPARATORS = " \u00a0\u202f"
+GROUPED_THOUSANDS = rf"\d{{1,3}}(?:[{GROUP_SEPARATORS}]\d{{3}})+(?:[.,]\d+)?(?!\d)"
+GROUPED_THOUSANDS_PATTERN = re.compile(GROUPED_THOUSANDS)
+GROUP_SEPARATOR_PATTERN = re.compile(rf"(?<=\d)[{GROUP_SEPARATORS}](?=\d)")
+
+NUMBER_PATTERN = re.compile(rf"(?:{GROUPED_THOUSANDS}|\d+(?:[.,]\d+)*)")
+
+# A single comma followed by anything other than exactly three digits cannot be a
+# thousands separator, so it is the French decimal comma: "2,5", "12,75". Exactly
+# three digits ("1,500") stays a thousands group, as it always has.
+DECIMAL_COMMA_PATTERN = re.compile(r"\d+,(?:\d{1,2}|\d{4,})")
 
 UNIT_VALUES = {word: i for i, word in enumerate(UNITS)}
 UNIT_VALUES.update(
@@ -97,6 +111,7 @@ MULTIPLIER_VALUES = {
     'baa': 1000,
     "milyɔn": 1_000_000,
     "milyon": 1_000_000,
+    "miliyɔn": 1_000_000,
 }
 
 NUMBER_TOKENS = (
@@ -136,7 +151,16 @@ def number_to_bambara(n: int | float | str) -> str:
     """
     if isinstance(n, str):
         n = n.strip()
-        if n.count(".") > 1 or (n.count(",") > 0 and n.count(".") == 0):
+        # Space grouping is French typography, where the comma is only ever the
+        # decimal separator. Malformed groups ("1 2 3") are not stripped, so they
+        # still fail to parse instead of silently reading as 123.
+        space_grouped = GROUPED_THOUSANDS_PATTERN.fullmatch(n) is not None
+        if space_grouped:
+            n = GROUP_SEPARATOR_PATTERN.sub("", n)
+
+        if DECIMAL_COMMA_PATTERN.fullmatch(n) or (space_grouped and n.count(",") == 1):
+            n = n.replace(",", ".")
+        elif n.count(".") > 1 or (n.count(",") > 0 and n.count(".") == 0):
             n = n.replace(".", "").replace(",", "")
         elif "," in n:
             n = n.replace(",", ".")
