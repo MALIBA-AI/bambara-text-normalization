@@ -1,3 +1,5 @@
+import pytest
+
 from bambara_normalizer import (
     bambara_to_number,
     denormalize_numbers_in_text,
@@ -98,3 +100,73 @@ class TestNumberRoundTrip:
             bambara = number_to_bambara(n)
             back = bambara_to_number(bambara)
             assert back == n, f"Round trip failed for {n}: {bambara} -> {back}"
+
+
+class TestSpaceGroupedThousands:
+    """French typography groups thousands with a space, a no-break space or a narrow one."""
+
+    def test_regular_space(self):
+        assert normalize_numbers_in_text("Mɔgɔ 3 500 nana") == ("Mɔgɔ waa saba ni kɛmɛ duuru nana")
+
+    def test_millions(self):
+        assert normalize_numbers_in_text("1 000 000") == "miliyɔn kelen"
+        assert normalize_numbers_in_text("2 500 000") == "miliyɔn fila ni waa kɛmɛ duuru"
+
+    @pytest.mark.parametrize("separator", [" ", " "])
+    def test_no_break_spaces(self, separator):
+        assert normalize_numbers_in_text(f"12{separator}500") == "waa tan ni fila ni kɛmɛ duuru"
+
+    def test_number_to_bambara_accepts_grouped_string(self):
+        assert number_to_bambara("1 000 000") == "miliyɔn kelen"
+
+    def test_groups_must_be_three_digits(self):
+        assert normalize_numbers_in_text("tile 1 2 3") == "tile kelen fila saba"
+        assert normalize_numbers_in_text("san 2020 100 mɔgɔ") == ("san waa fila ni mugan kɛmɛ mɔgɔ")
+
+
+class TestDecimalComma:
+    """A comma followed by anything but exactly three digits cannot be a thousands group."""
+
+    def test_one_decimal_digit(self):
+        assert normalize_numbers_in_text("A ye 2,5 di") == "A ye fila tomi duuru di"
+
+    def test_two_decimal_digits(self):
+        assert number_to_bambara("12,75") == "tan ni fila tomi wolonwula duuru"
+
+    def test_three_digits_stay_a_thousands_group(self):
+        assert normalize_numbers_in_text("Mɔgɔ 1,500 nana") == ("Mɔgɔ waa kelen ni kɛmɛ duuru nana")
+        assert number_to_bambara("1,000,000") == "miliyɔn kelen"
+
+
+class TestMillionWord:
+    def test_spelling(self):
+        assert number_to_bambara(2_000_000) == "miliyɔn fila"
+
+    def test_round_trip(self):
+        for n in [1_000_000, 2_500_000, 7_000_005]:
+            assert bambara_to_number(number_to_bambara(n)) == n
+
+
+class TestGroupedThousandsWithDecimal:
+    """With space grouping the comma can only be the decimal separator, whatever follows it."""
+
+    @pytest.mark.parametrize(
+        "text, expected",
+        [
+            ("1 000,5", "waa kelen tomi duuru"),
+            ("1 000.5", "waa kelen tomi duuru"),
+            ("1 000,500", "waa kelen tomi duuru"),
+        ],
+    )
+    def test_grouped_integer_keeps_its_fraction(self, text, expected):
+        assert normalize_numbers_in_text(text) == expected
+        assert number_to_bambara(text) == expected
+
+    def test_common_round_thousands(self):
+        assert normalize_numbers_in_text("12 000") == "waa tan ni fila"
+        assert normalize_numbers_in_text("20 000") == "waa mugan"
+
+    @pytest.mark.parametrize("text", ["1 2 3", "12 34", "1 00"])
+    def test_malformed_grouping_is_still_rejected(self, text):
+        with pytest.raises(ValueError):
+            number_to_bambara(text)

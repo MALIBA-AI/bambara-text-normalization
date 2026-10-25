@@ -321,6 +321,9 @@ def bambara_to_duration(phrase: str) -> tuple[int, int, int]:
 
 
 CLOCK_PATTERN = re.compile(r"\b(\d{1,2}):(\d{2})(?::(\d{2}))?\b")
+# French clock time, "10h30" / "14H05". Two minute digits must follow the "h"
+# directly: a bare "10h" and "1h30min" stay durations.
+FRENCH_CLOCK_PATTERN = re.compile(r"\b(\d{1,2})[hH](\d{2})\b")
 DURATION_PATTERN = re.compile(
     r"\b\d+\s*h(?:\s*\d+\s*(?:min|m))?(?:\s*\d+\s*s(?:ec)?)?\b|\b\d+\s*min(?:\s*\d+\s*s(?:ec)?)?\b|\b\d+\s*s(?:ec)?\b",
     re.IGNORECASE,
@@ -329,10 +332,9 @@ DURATION_PATTERN = re.compile(
 
 def _replace_clock_time(match: re.Match) -> str | None:
     try:
-        hour = int(match.group(1))
-        minute = int(match.group(2))
-        second = int(match.group(3)) if match.group(3) else 0
-        return time_to_bambara(hour, minute, second)
+        hour, minute, *rest = match.groups()
+        second = int(rest[0]) if rest and rest[0] else 0
+        return time_to_bambara(int(hour), int(minute), second)
     except (ValueError, IndexError):
         return None
 
@@ -351,12 +353,13 @@ def find_time_spans(text: str) -> list[NumericSpan]:
     """
     Find time patterns in text and their Bambara expansions.
 
-    Recognizes HH:MM / HH:MM:SS clock times (tier 0) and XhYmZs durations
+    Recognizes HH:MM / HH:MM:SS and French HHhMM clock times (tier 0) and XhYmZs durations
     (tier 1). Time spans lose against dates and win over measurements and bare
     numbers.
     """
     return [
         *find_spans(text, CLOCK_PATTERN, TIME, _replace_clock_time),
+        *find_spans(text, FRENCH_CLOCK_PATTERN, TIME, _replace_clock_time),
         *find_spans(text, DURATION_PATTERN, TIME, _replace_duration, tier=1),
     ]
 

@@ -144,3 +144,19 @@ class TestNormalizerIntegration:
         assert "10:45" in result
         assert "6 l" in result
         assert "12 + 8 = 20" in result
+
+
+class TestWrittenNumberFormats:
+    def test_grouped_operand_in_arithmetic(self):
+        assert normalize_numeric_expressions("1 000 + 500") == ("waa kelen fara kɛmɛ duuru kan")
+
+    def test_mixed_sentence(self):
+        assert normalize_numeric_expressions("A bɛ na 10h30 la, 3 500 ani 2,5 kg") == (
+            "A bɛ na Nɛgɛ kaɲɛ tan ni sanga bi saba la, waa saba ni kɛmɛ duuru ani "
+            "kilogaramu fila tomi duuru"
+        )
+
+    def test_grouped_decimal_measurement_leaves_no_digit(self):
+        assert normalize_numeric_expressions("A ye 2 500,75 kg") == (
+            "A ye kilogaramu waa fila ni kɛmɛ duuru tomi wolonwula duuru"
+        )

@@ -234,3 +234,25 @@ class TestTimeValidation:
     def test_invalid_phrase_raises(self):
         with pytest.raises(ValueError):
             bambara_to_time("invalid time phrase")
+
+
+class TestFrenchClockTime:
+    """French writes clock times with an "h" between hour and minutes: 10h30, 14h05."""
+
+    def test_in_sentence(self):
+        assert normalize_times_in_text("A bɛ na 10h30 la") == (
+            "A bɛ na Nɛgɛ kaɲɛ tan ni sanga bi saba la"
+        )
+
+    def test_uppercase_and_leading_zero_minutes(self):
+        assert normalize_times_in_text("14H05") == "Nɛgɛ kaɲɛ tan ni naani ni sanga duuru"
+
+    def test_bare_hour_stays_a_duration(self):
+        assert normalize_times_in_text("10h") == "lɛrɛ tan"
+
+    def test_duration_with_minute_unit_is_unchanged(self):
+        assert normalize_times_in_text("1h30min") == "lɛrɛ kelen ni miniti bi saba"
+
+    @pytest.mark.parametrize("text", ["25h30", "10h75"])
+    def test_impossible_clock_time_is_not_a_time(self, text):
+        assert normalize_times_in_text(text) == text
