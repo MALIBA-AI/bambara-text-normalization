@@ -154,32 +154,53 @@ def number_to_bambara(n: int | float | str) -> str:
         'duuru tomi saba'
     """
     if isinstance(n, str):
-        n = n.strip()
-        # Space grouping is French typography, where the comma is only ever the
-        # decimal separator. Malformed groups ("1 2 3") are not stripped, so they
-        # still fail to parse instead of silently reading as 123.
-        space_grouped = GROUPED_THOUSANDS_PATTERN.fullmatch(n) is not None
-        if space_grouped:
-            n = GROUP_SEPARATOR_PATTERN.sub("", n)
-
-        if DECIMAL_COMMA_PATTERN.fullmatch(n) or (space_grouped and n.count(",") == 1):
-            n = n.replace(",", ".")
-        elif DOT_THOUSANDS_PATTERN.fullmatch(n):
-            n = n.replace(".", "")
-        elif n.count(".") > 1 or (n.count(",") > 0 and n.count(".") == 0):
-            n = n.replace(".", "").replace(",", "")
-        elif "," in n:
-            n = n.replace(",", ".")
-
-        if "." in n:
-            n = float(n)
-        else:
-            n = int(n)
+        n = parse_number(n)
 
     if isinstance(n, float):
         return _float_to_bambara(n)
 
     return _int_to_bambara(int(n))
+
+
+def parse_number(text: str) -> int | float:
+    """
+    Read a written numeral, following the same separator rules as number_to_bambara.
+
+    Args:
+        text: Numeral as written, e.g. "1 000", "1.000", "2,5"
+
+    Returns:
+        The integer value, or a float when the numeral has a decimal part
+
+    Raises:
+        ValueError: If the text is not a well-formed numeral
+
+    Examples:
+        >>> parse_number("1 000")
+        1000
+        >>> parse_number("2,5")
+        2.5
+    """
+    n = text.strip()
+    # Space grouping is French typography, where the comma is only ever the
+    # decimal separator. Malformed groups ("1 2 3") are not stripped, so they
+    # still fail to parse instead of silently reading as 123.
+    space_grouped = GROUPED_THOUSANDS_PATTERN.fullmatch(n) is not None
+    if space_grouped:
+        n = GROUP_SEPARATOR_PATTERN.sub("", n)
+
+    if DECIMAL_COMMA_PATTERN.fullmatch(n) or (space_grouped and n.count(",") == 1):
+        n = n.replace(",", ".")
+    elif DOT_THOUSANDS_PATTERN.fullmatch(n):
+        n = n.replace(".", "")
+    elif n.count(".") > 1 or (n.count(",") > 0 and n.count(".") == 0):
+        n = n.replace(".", "").replace(",", "")
+    elif "," in n:
+        n = n.replace(",", ".")
+
+    if "." in n:
+        return float(n)
+    return int(n)
 
 
 def _int_to_bambara(n: int) -> str:
