@@ -51,6 +51,7 @@ class BambaraNormalizerConfig:
         strip_repetitions: Normalize repeated characters
         normalize_compounds: Standardize compound word spacing
         expand_times: Convert time patterns to Bambara
+        expand_currency: Convert money amounts (5 000 FCFA, $20) to Bambara
     """
 
     contraction_mode: str = "expand"
@@ -66,6 +67,7 @@ class BambaraNormalizerConfig:
     expand_dates: bool = False
     expand_times: bool = False
     expand_measurements: bool = False
+    expand_currency: bool = False
     remove_diacritics_except_tones: bool = False
     handle_french_loanwords: bool = True
     strip_repetitions: bool = False

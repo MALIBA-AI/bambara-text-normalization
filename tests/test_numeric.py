@@ -21,6 +21,7 @@ FLAG_FOR_KIND = {
     "date": "dates",
     "time": "times",
     "arithmetic": "arithmetic",
+    "currency": "currency",
     "measurement": "measurements",
     "number": "numbers",
 }

@@ -24,6 +24,11 @@ from .arithmetic import (
     is_arithmetic_operator,
     normalize_arithmetic_in_text,
 )
+from .currency import (
+    currency_to_bambara,
+    find_currency_spans,
+    normalize_currency_in_text,
+)
 from .dates import (
     DAYS_OF_WEEK,
     MONTHS,
@@ -174,6 +179,9 @@ __all__ = [
     "find_arithmetic_spans",
     "is_arithmetic_operator",
     "OPERATOR_ALIASES",
+    "currency_to_bambara",
+    "find_currency_spans",
+    "normalize_currency_in_text",
     "date_to_bambara",
     "bambara_to_date",
     "format_date_bambara",

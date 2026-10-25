@@ -252,6 +252,7 @@ class BambaraNormalizer:
             arithmetic=self.config.expand_arithmetic,
             measurements=self.config.expand_measurements,
             numbers=self.config.expand_numbers,
+            currency=self.config.expand_currency,
         )
 
         if self.config.normalize_special_chars:

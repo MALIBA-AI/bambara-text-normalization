@@ -14,27 +14,33 @@
 """
 Single-pass expansion of every numeric expression in a text.
 
-Dates, times, arithmetic, measurements, and numbers are recognized in one
-classification step, and each numeric span of the text is claimed by exactly one
-of them (precedence: date > time > arithmetic > measurement > number). Only then
-is anything rewritten, so the result never depends on the order the expanders are
-invoked in.
+Dates, times, arithmetic, currency, measurements, and numbers are recognized in
+one classification step, and each numeric span of the text is claimed by exactly
+one of them (precedence: date > time > arithmetic > currency > measurement >
+number). Only then is anything rewritten, so the result never depends on the
+order the expanders are invoked in.
 
 A span classified as a date is a date whether or not date expansion is enabled:
 disabling `dates` leaves "24-12-2025" alone instead of letting the number
 expander turn it into three unrelated numbers. Every partial combination of
 flags is therefore safe, and applying the flags one at a time -- in any order --
 gives the same text as applying them together.
+
+Currency is the exception: it is opt-in, and when disabled it is not recognized
+at all, so "5 000 FCFA" reads as the number "waa duuru" followed by "FCFA" exactly
+as it did before currency support existed.
 """
 
 from __future__ import annotations
 
 from .arithmetic import find_arithmetic_spans
+from .currency import find_currency_spans
 from .dates import find_date_spans
 from .measurements import find_measurement_spans
 from .numbers import find_number_spans
 from .spans import (
     ARITHMETIC,
+    CURRENCY,
     DATE,
     KIND_PRECEDENCE,
     MEASUREMENT,
@@ -47,13 +53,18 @@ from .spans import (
 from .times import find_time_spans
 
 
-def find_numeric_spans(text: str, include_kalo: bool = False) -> list[NumericSpan]:
+def find_numeric_spans(
+    text: str,
+    include_kalo: bool = False,
+    currency: bool = False,
+) -> list[NumericSpan]:
     """
     Classify every numeric span in text, non-overlapping, ordered by position.
 
     Args:
         text: Input text
         include_kalo: Include "kalo" after month names in date expansions
+        currency: Recognize money amounts ("5 000 FCFA", "$20")
 
     Returns:
         The winning spans, each carrying its kind and Bambara expansion
@@ -62,7 +73,8 @@ def find_numeric_spans(text: str, include_kalo: bool = False) -> list[NumericSpa
         >>> [(s.source, s.kind) for s in find_numeric_spans("10:45 la, 6 l ni 3")]
         [('10:45', 'time'), ('6 l', 'measurement'), ('3', 'number')]
     """
-    return resolve_spans(_candidates(text, KIND_PRECEDENCE, include_kalo))
+    kinds = tuple(kind for kind in KIND_PRECEDENCE if currency or kind != CURRENCY)
+    return resolve_spans(_candidates(text, kinds, include_kalo))
 
 
 def normalize_numeric_expressions(
@@ -73,6 +85,7 @@ def normalize_numeric_expressions(
     measurements: bool = True,
     numbers: bool = True,
     include_kalo: bool = False,
+    currency: bool = False,
 ) -> str:
     """
     Expand numeric expressions to Bambara in a single order-independent pass.
@@ -85,6 +98,7 @@ def normalize_numeric_expressions(
         measurements: Expand measurement spans
         numbers: Expand bare numerals
         include_kalo: Include "kalo" after month names in date expansions
+        currency: Expand money amounts ("5 000 FCFA", "$20"). Off by default.
 
     Returns:
         Text with the enabled kinds expanded. Spans of a disabled kind are left
@@ -101,6 +115,7 @@ def normalize_numeric_expressions(
         DATE: dates,
         TIME: times,
         ARITHMETIC: arithmetic,
+        CURRENCY: currency,
         MEASUREMENT: measurements,
         NUMBER: numbers,
     }
@@ -119,12 +134,15 @@ def _kinds_to_scan(enabled: dict[str, bool]) -> tuple[str, ...]:
 
     A disabled kind still has to be recognized when a *less* specific kind is
     enabled, so that its digits are shielded from it. Nothing below the last
-    enabled kind can shield anything, so it is skipped.
+    enabled kind can shield anything, so it is skipped. Currency only shields when
+    enabled; see the module docstring.
     """
     ranks = [rank for rank, kind in enumerate(KIND_PRECEDENCE) if enabled[kind]]
     if not ranks:
         return ()
-    return KIND_PRECEDENCE[: max(ranks) + 1]
+    return tuple(
+        kind for kind in KIND_PRECEDENCE[: max(ranks) + 1] if enabled[kind] or kind != CURRENCY
+    )
 
 
 def _candidates(text: str, kinds: tuple[str, ...], include_kalo: bool) -> list[NumericSpan]:
@@ -132,6 +150,7 @@ def _candidates(text: str, kinds: tuple[str, ...], include_kalo: bool) -> list[N
         DATE: lambda: find_date_spans(text, include_kalo=include_kalo),
         TIME: lambda: find_time_spans(text),
         ARITHMETIC: lambda: find_arithmetic_spans(text),
+        CURRENCY: lambda: find_currency_spans(text),
         MEASUREMENT: lambda: find_measurement_spans(text),
         NUMBER: lambda: find_number_spans(text),
     }

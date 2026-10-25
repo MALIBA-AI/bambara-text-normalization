@@ -558,6 +558,64 @@ The year guard only covers the tight form. Write the spaces when you mean the op
 
 ---
 
+## Currency Normalization
+
+A money amount and its currency are read as one phrase: the currency name, `wari` (money), then the amount. Currency expansion is **opt-in**: when it is off, `5 000 FCFA` reads as before, the number followed by `FCFA`.
+
+### With Normalizer
+```python
+from bambara_normalizer import normalize, normalize_numeric_expressions
+
+normalize("A ye 100 000 FCFA sara", expand_currency=True, expand_numbers=True)  # => "a ye sefa wari waa mugan sara"
+normalize_numeric_expressions("A ye 100 000 FCFA sara.", currency=True)       # => "A ye sefa wari waa mugan sara."
+```
+
+### Currency to Bambara (Text Normalization)
+```python
+from bambara_normalizer import currency_to_bambara, normalize_currency_in_text
+
+currency_to_bambara("20 000", "FCFA")  # => "sefa wari waa naani"
+currency_to_bambara(20, "$")           # => "dolari wari mugan"
+
+# In text: the currency may follow or precede the amount
+normalize_currency_in_text("A ye 1 100 000 F sara.")  # => "A ye sefa wari miliyɔn kelen ni waa mugan sara."
+normalize_currency_in_text("$20 ani €15,50")         # => "dolari wari mugan ani ero wari tan ni duuru tomi duuru"
+```
+
+### CFA is counted in dɔrɔmɛ
+
+Spoken Bambara counts CFA francs below a million in dɔrɔmɛ, the five-franc coin: that part of the amount is divided by five. Millions keep their face value. The dɔrɔmɛ count is said in three pieces: hundreds of thousands and the remaining thousands each take `waa`, and the part below a thousand is joined with `ani`. When that last part is under 1 000 FCFA (fewer than two hundred dɔrɔmɛ, `kɛmɛ fila`), the coin is named.
+
+| FCFA | dɔrɔmɛ | Spoken |
+|------|--------|--------|
+| 200 | 40 | sefa wari dɔrɔmɛ bi naani |
+| 500 | 100 | sefa wari dɔrɔmɛ kɛmɛ |
+| 20 000 | 4 000 | sefa wari waa naani |
+| 100 000 | 20 000 | sefa wari waa mugan |
+| 600 000 | 120 000 | sefa wari waa kɛmɛ ni waa mugan |
+| 601 000 | 120 200 | sefa wari waa kɛmɛ ni waa mugan ani kɛmɛ fila |
+| 620 250 | 124 050 | sefa wari waa kɛmɛ ni waa mugan ni naani ani dɔrɔmɛ bi duuru |
+| 625 000 | 125 000 | sefa wari waa kɛmɛ ni waa mugan ni duuru |
+| 1 000 000 | 1 million + 0 | sefa wari miliyɔn kelen |
+| 1 500 000 | 1 million + 100 000 | sefa wari miliyɔn kelen ni waa kɛmɛ |
+| 2 000 500 | 2 million + 100 | sefa wari miliyɔn fila ani dɔrɔmɛ kɛmɛ |
+
+An amount that is not a multiple of five is never rounded: `7 FCFA` is `sefa wari dɔrɔmɛ kelen tomi naani` (1.4 dɔrɔmɛ). An amount already written in dɔrɔmɛ is not divided again (`500 dɔrɔmɛ` => `dɔrɔmɛ kɛmɛ duuru`). Other currencies keep their face value.
+
+### Supported Currencies
+
+| Currency | Written forms | Bambara |
+|----------|---------------|---------|
+| CFA franc | `FCFA` `F CFA` `F.CFA` `CFA` `XOF` `F` `franc(s)` `franc(s) CFA` | `sefa wari` (below a million: amount ÷ 5) |
+| Euro | `€` `EUR` `euro(s)` | `ero wari` |
+| US dollar | `$` `USD` `dollar(s)` | `dolari wari` |
+| Pound sterling | `£` `GBP` | `livuru wari` |
+| dɔrɔmɛ | `dɔrɔmɛ` | `dɔrɔmɛ` |
+
+Symbols and ISO codes may also come before the amount (`$20`, `USD 20`). Only a capital `F` is read as the franc, and a currency glued to a word is not matched (`5 Fanta`). An unknown currency fails open: its amount is read as a plain number.
+
+---
+
 ## Numeric Expansion (dates, times, arithmetic, measurements, numbers)
 
 Dates, times, arithmetic, measurements and bare numbers all compete for the same digits. The normalizer resolves them in a **single classification pass**: every numeric span of the text is claimed by exactly one kind, and only then is anything rewritten. Expansion therefore does not depend on the order the expanders run in.
@@ -565,7 +623,7 @@ Dates, times, arithmetic, measurements and bare numbers all compete for the same
 Precedence runs from the most specific shape to the most generic:
 
 ```
-date > time > arithmetic > measurement > number
+date > time > arithmetic > currency > measurement > number
 ```
 
 ```python
@@ -591,7 +649,7 @@ normalize("A bɛ 24-12-2025 la ni 3", expand_numbers=True, expand_dates=False, r
 # => "a bɛ 24-12-2025 la ni saba"
 ```
 
-The single-kind functions (`normalize_dates_in_text`, `normalize_times_in_text`, `normalize_arithmetic_in_text`, `normalize_measurements_in_text`, `normalize_numbers_in_text`) each expand only their own shape and are unaware of the others — `normalize_numbers_in_text` will happily expand the digits of a date. Use `normalize_numeric_expressions` (or the normalizer, which calls it) for mixed text.
+The single-kind functions (`normalize_dates_in_text`, `normalize_times_in_text`, `normalize_arithmetic_in_text`, `normalize_currency_in_text`, `normalize_measurements_in_text`, `normalize_numbers_in_text`) each expand only their own shape and are unaware of the others — `normalize_numbers_in_text` will happily expand the digits of a date. Use `normalize_numeric_expressions` (or the normalizer, which calls it) for mixed text.
 
 **Not resolved by precedence:** genuinely ambiguous shapes. `10-45` could be a date fragment or a ratio, and `24-12-2025` is read as DD-MM-YYYY, never MM-DD-YYYY. Precedence makes the choice *deterministic and documented*, not correct in every context.
 
