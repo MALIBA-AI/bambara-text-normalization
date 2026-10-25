@@ -5,6 +5,7 @@ from bambara_normalizer import (
     denormalize_numbers_in_text,
     normalize,
     normalize_numbers_in_text,
+    normalize_numeric_expressions,
     number_to_bambara,
 )
 
@@ -170,3 +171,33 @@ class TestGroupedThousandsWithDecimal:
     def test_malformed_grouping_is_still_rejected(self, text):
         with pytest.raises(ValueError):
             number_to_bambara(text)
+
+
+class TestDotThousandsSeparator:
+    """A single dot before exactly three digits groups thousands, mirroring the comma: "1.000 FCFA"."""
+
+    @pytest.mark.parametrize(
+        "text, expected",
+        [
+            ("1.000", "waa kelen"),
+            ("3.500", "waa saba ni kɛmɛ duuru"),
+            ("1.234", "waa kelen ni kɛmɛ fila ni bi saba ni naani"),
+        ],
+    )
+    def test_three_digits_after_the_dot(self, text, expected):
+        assert normalize_numbers_in_text(text) == expected
+        assert number_to_bambara(text) == expected
+
+    @pytest.mark.parametrize(
+        "text, expected",
+        [
+            ("3.5", "saba tomi duuru"),
+            ("12.25", "tan ni fila tomi fila duuru"),
+            ("3.1415", "saba tomi kelen naani kelen duuru"),
+        ],
+    )
+    def test_other_lengths_stay_decimal(self, text, expected):
+        assert number_to_bambara(text) == expected
+
+    def test_dot_grouped_operand_in_arithmetic(self):
+        assert normalize_numeric_expressions("1.000 + 1") == "waa kelen fara kelen kan"
