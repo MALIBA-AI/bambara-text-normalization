@@ -201,3 +201,67 @@ class TestDotThousandsSeparator:
 
     def test_dot_grouped_operand_in_arithmetic(self):
         assert normalize_numeric_expressions("1.000 + 1") == "waa kelen fara kelen kan"
+
+
+class TestOrdinalNumbers:
+    @pytest.mark.parametrize(
+        "text, expected",
+        [
+            ("1er", "fɔlɔ"),
+            ("1ère", "fɔlɔ"),
+            ("1re", "fɔlɔ"),
+            ("2e", "filanan"),
+            ("2è", "filanan"),
+            ("2ème", "filanan"),
+            ("2eme", "filanan"),
+            ("3ième", "sabanan"),
+            ("2nd", "filanan"),
+            ("2nde", "filanan"),
+            ("5nan", "duurunan"),
+            ("10e", "tannan"),
+            ("21e", "mugan ni kelennan"),
+        ],
+    )
+    def test_ordinal_suffix_is_read_as_bambara_ordinal(self, text, expected):
+        """
+        A numeral carrying a French ordinal suffix (er, e, ème, nd...) or the
+        Bambara suffix "nan" is read with the Bambara ordinal: "fɔlɔ" for one,
+        the cardinal followed by "nan" otherwise.
+        """
+        result = normalize_numeric_expressions(text)
+
+        assert result == expected
+
+    def test_ordinal_inside_a_sentence(self):
+        """
+        The ordinal is replaced in place and the surrounding words are kept.
+        """
+        text = "A sera 2e ye, n tun ye 1er ye"
+
+        result = normalize_numeric_expressions(text)
+
+        assert result == "A sera filanan ye, n tun ye fɔlɔ ye"
+
+    def test_suffix_is_case_insensitive(self):
+        """
+        Upper-case suffixes, as in headings, are read the same way.
+        """
+        assert normalize_numeric_expressions("1ER 2E") == "fɔlɔ filanan"
+
+    @pytest.mark.parametrize("text", ["2em", "2 e", "2emploi", "2,5e"])
+    def test_numeral_followed_by_other_letters_is_not_an_ordinal(self, text):
+        """
+        Only a suffix that ends the word makes an ordinal. A numeral glued to a
+        longer word, or separated from the suffix by a space, keeps its
+        cardinal reading.
+        """
+        result = normalize_numeric_expressions(text)
+
+        assert result.startswith("fila")
+        assert "filanan" not in result
+
+    def test_normalize_numbers_in_text_reads_ordinals(self):
+        """
+        The number-only entry point gives the same ordinal reading.
+        """
+        assert normalize_numbers_in_text("2e") == "filanan"
