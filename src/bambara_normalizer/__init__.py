@@ -91,6 +91,11 @@ from .numeric import (
     find_numeric_spans,
     normalize_numeric_expressions,
 )
+from .phones import (
+    find_phone_spans,
+    normalize_phone_numbers_in_text,
+    phone_number_to_bambara,
+)
 from .spans import (
     KIND_PRECEDENCE,
     NumericSpan,
@@ -182,6 +187,9 @@ __all__ = [
     "currency_to_bambara",
     "find_currency_spans",
     "normalize_currency_in_text",
+    "phone_number_to_bambara",
+    "find_phone_spans",
+    "normalize_phone_numbers_in_text",
     "date_to_bambara",
     "bambara_to_date",
     "format_date_bambara",
