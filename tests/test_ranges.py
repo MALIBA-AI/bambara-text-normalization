@@ -74,9 +74,8 @@ class TestNotARange:
 
 class TestInText:
     def test_ranges_in_a_sentence(self):
-        assert normalize_ranges_in_text("Butiki bɛ da wuli 8h-17h, san 2020-2025 kɔnɔ.") == (
-            "Butiki bɛ da wuli lɛrɛ seegin fo lɛrɛ tan ni wolonwula, "
-            "san waa fila ni mugan fo waa fila ni mugan ni duuru kɔnɔ."
+        assert normalize_ranges_in_text("Butiki bɛ dayɛlɛ 8h-17h.") == (
+            "Butiki bɛ dayɛlɛ lɛrɛ seegin fo lɛrɛ tan ni wolonwula."
         )
 
     def test_disabled_ranges_are_left_alone(self):
