@@ -253,6 +253,8 @@ class BambaraNormalizer:
             measurements=self.config.expand_measurements,
             numbers=self.config.expand_numbers,
             currency=self.config.expand_currency,
+            # A phone number is digits read in pairs, so it follows the number setting.
+            phones=self.config.expand_numbers,
         )
 
         if self.config.normalize_special_chars:

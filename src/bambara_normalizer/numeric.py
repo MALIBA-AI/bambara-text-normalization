@@ -14,11 +14,11 @@
 """
 Single-pass expansion of every numeric expression in a text.
 
-Dates, times, arithmetic, currency, measurements, and numbers are recognized in
-one classification step, and each numeric span of the text is claimed by exactly
-one of them (precedence: date > time > arithmetic > currency > measurement >
-number). Only then is anything rewritten, so the result never depends on the
-order the expanders are invoked in.
+Dates, times, arithmetic, currency, phone numbers, measurements, and numbers are
+recognized in one classification step, and each numeric span of the text is claimed
+by exactly one of them (precedence: date > time > arithmetic > currency > phone >
+measurement > number). Only then is anything rewritten, so the result never
+depends on the order the expanders are invoked in.
 
 A span classified as a date is a date whether or not date expansion is enabled:
 disabling `dates` leaves "24-12-2025" alone instead of letting the number
@@ -38,6 +38,7 @@ from .currency import find_currency_spans
 from .dates import find_date_spans
 from .measurements import find_measurement_spans
 from .numbers import find_number_spans
+from .phones import find_phone_spans
 from .spans import (
     ARITHMETIC,
     CURRENCY,
@@ -45,6 +46,7 @@ from .spans import (
     KIND_PRECEDENCE,
     MEASUREMENT,
     NUMBER,
+    PHONE,
     TIME,
     NumericSpan,
     apply_spans,
@@ -86,6 +88,7 @@ def normalize_numeric_expressions(
     numbers: bool = True,
     include_kalo: bool = False,
     currency: bool = False,
+    phones: bool = True,
 ) -> str:
     """
     Expand numeric expressions to Bambara in a single order-independent pass.
@@ -99,6 +102,7 @@ def normalize_numeric_expressions(
         numbers: Expand bare numerals
         include_kalo: Include "kalo" after month names in date expansions
         currency: Expand money amounts ("5 000 FCFA", "$20"). Off by default.
+        phones: Expand Malian phone numbers ("76 12 34 56"), pair by pair
 
     Returns:
         Text with the enabled kinds expanded. Spans of a disabled kind are left
@@ -116,6 +120,7 @@ def normalize_numeric_expressions(
         TIME: times,
         ARITHMETIC: arithmetic,
         CURRENCY: currency,
+        PHONE: phones,
         MEASUREMENT: measurements,
         NUMBER: numbers,
     }
@@ -151,6 +156,7 @@ def _candidates(text: str, kinds: tuple[str, ...], include_kalo: bool) -> list[N
         TIME: lambda: find_time_spans(text),
         ARITHMETIC: lambda: find_arithmetic_spans(text),
         CURRENCY: lambda: find_currency_spans(text),
+        PHONE: lambda: find_phone_spans(text),
         MEASUREMENT: lambda: find_measurement_spans(text),
         NUMBER: lambda: find_number_spans(text),
     }
