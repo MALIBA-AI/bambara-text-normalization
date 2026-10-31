@@ -417,10 +417,11 @@ def find_number_spans(text: str) -> list[NumericSpan]:
     """
     Find bare numerals in text and their Bambara expansions.
 
-    A numeral immediately followed (optionally separated by a single space) by a
-    percent sign is read as a single phrase: the number followed by the Bambara
-    word for "percent" (``kɛ̀mɛsarada``). The percent sign is
-    consumed by the span so it does not leak into the output.
+    A numeral immediately followed (optionally separated by a single space,
+    no-break space, or narrow no-break space) by a percent sign is read as a
+    single phrase: the number followed by the Bambara word for "percent"
+    (``kɛ̀mɛsarada``). The percent sign is consumed by the span so it does not
+    leak into the output.
 
     Numbers are the most generic numeric shape, so these spans lose against any
     overlapping date, time, or measurement span. See `spans.resolve_spans`.
@@ -429,7 +430,7 @@ def find_number_spans(text: str) -> list[NumericSpan]:
     result = []
     for span in spans:
         i = span.end
-        if i < len(text) and text[i] == " ":
+        if i < len(text) and text[i] in GROUP_SEPARATORS:
             i += 1
         if i < len(text) and text[i] == "%":
             result.append(

@@ -201,3 +201,37 @@ class TestDotThousandsSeparator:
 
     def test_dot_grouped_operand_in_arithmetic(self):
         assert normalize_numeric_expressions("1.000 + 1") == "waa kelen fara kelen kan"
+
+
+class TestPercent:
+    """A numeral directly, or across a space of any kind, before `%` reads as percent."""
+
+    @pytest.mark.parametrize(
+        "text, expected",
+        [
+            ("50%", "bi duuru kɛmɛsarada"),
+            ("50 %", "bi duuru kɛmɛsarada"),
+            ("50 %", "bi duuru kɛmɛsarada"),
+            ("50 %", "bi duuru kɛmɛsarada"),
+        ],
+    )
+    def test_whole_number(self, text, expected):
+        assert normalize_numbers_in_text(text) == expected
+
+    @pytest.mark.parametrize(
+        "text, expected",
+        [
+            ("12,5%", "tan ni fila tomi duuru kɛmɛsarada"),
+            ("12,5 %", "tan ni fila tomi duuru kɛmɛsarada"),
+            ("12,5 %", "tan ni fila tomi duuru kɛmɛsarada"),
+            ("12,5 %", "tan ni fila tomi duuru kɛmɛsarada"),
+        ],
+    )
+    def test_decimal(self, text, expected):
+        assert normalize_numbers_in_text(text) == expected
+
+    def test_percent_sign_is_consumed(self):
+        assert "%" not in normalize_numbers_in_text("A ye 50% sɔrɔ")
+
+    def test_in_sentence(self):
+        assert normalize_numbers_in_text("A ye 50 % sɔrɔ") == "A ye bi duuru kɛmɛsarada sɔrɔ"
