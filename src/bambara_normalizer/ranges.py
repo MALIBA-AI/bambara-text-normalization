@@ -97,10 +97,10 @@ def normalize_ranges_in_text(text: str) -> str:
         Text with each range read as its two ends joined by "fo"
 
     Examples:
-        >>> normalize_ranges_in_text("Butiki bɛ da wuli 8h-17h")
-        'Butiki bɛ da wuli lɛrɛ seegin fo lɛrɛ tan ni wolonwula'
+        >>> normalize_ranges_in_text("Butiki bɛ dayɛlɛ 8h-17h")
+        'Butiki bɛ dayɛlɛ lɛrɛ seegin fo lɛrɛ tan ni wolonwula'
 
-        >>> normalize_ranges_in_text("san 2020-2025 kɔnɔ")
-        'san waa fila ni mugan fo waa fila ni mugan ni duuru kɔnɔ'
+        >>> normalize_ranges_in_text("2020-2025")
+        'waa fila ni mugan fo waa fila ni mugan ni duuru'
     """
     return substitute(text, find_range_spans(text))

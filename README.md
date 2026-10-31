@@ -623,11 +623,11 @@ A dash between two times or two years is read as a range: both ends, joined by `
 ```python
 from bambara_normalizer import normalize_ranges_in_text
 
-normalize_ranges_in_text("Butiki bɛ da wuli 8h-17h")
-# => "Butiki bɛ da wuli lɛrɛ seegin fo lɛrɛ tan ni wolonwula"
+normalize_ranges_in_text("Butiki bɛ dayɛlɛ 8h-17h")
+# => "Butiki bɛ dayɛlɛ lɛrɛ seegin fo lɛrɛ tan ni wolonwula"
 
-normalize_ranges_in_text("san 2020-2025 kɔnɔ")
-# => "san waa fila ni mugan fo waa fila ni mugan ni duuru kɔnɔ"
+normalize_ranges_in_text("2020-2025")
+# => "waa fila ni mugan fo waa fila ni mugan ni duuru"
 ```
 
 | Written | Read as a range |
