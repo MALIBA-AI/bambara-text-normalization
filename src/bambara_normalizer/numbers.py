@@ -127,6 +127,8 @@ NUMBER_TOKENS = (
 )
 
 
+PERCENT_WORD = "kɛmɛsarada"
+
 def number_to_bambara(n: int | float | str) -> str:
     """
     Convert a number to Bambara words.
@@ -409,8 +411,6 @@ def _replace_number(match: re.Match) -> str | None:
     except (ValueError, IndexError):
         return None
 
-
-PERCENT_WORD = "kɛ̀mɛsarada"
 
 
 def find_number_spans(text: str) -> list[NumericSpan]:
