@@ -117,7 +117,7 @@ def normalize_phone_numbers_in_text(text: str) -> str:
         Text with phone numbers read pair by pair
 
     Examples:
-        >>> normalize_phone_numbers_in_text("A wele 76.12.34.56 la")
-        'A wele bi wolonwula ni wɔɔrɔ, tan ni fila, bi saba ni naani, bi duuru ni wɔɔrɔ la'
+        >>> normalize_phone_numbers_in_text("76.12.34.56")
+        'bi wolonwula ni wɔɔrɔ, tan ni fila, bi saba ni naani, bi duuru ni wɔɔrɔ'
     """
     return substitute(text, find_phone_spans(text))

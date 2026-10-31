@@ -629,8 +629,8 @@ phone_number_to_bambara("76 12 34 56")
 phone_number_to_bambara("+22376123456")
 # => "kɛmɛ fila ni mugan ni saba, bi wolonwula ni wɔɔrɔ, tan ni fila, bi saba ni naani, bi duuru ni wɔɔrɔ"
 
-normalize_phone_numbers_in_text("A wele 20.06.11.00 la")
-# => "A wele mugan, fu wɔɔrɔ, tan ni kelen, fu fu la"
+normalize_phone_numbers_in_text("20.06.11.00")
+# => "mugan, fu wɔɔrɔ, tan ni kelen, fu fu"
 ```
 
 | Written | Read as a phone number |
