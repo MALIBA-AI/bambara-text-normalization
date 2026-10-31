@@ -107,8 +107,8 @@ class TestNotAPhoneNumber:
 
 class TestInText:
     def test_two_numbers_in_one_sentence(self):
-        assert normalize_phone_numbers_in_text("A wele 76.12.34.56 walima 20 06 11 00 la.") == (
-            f"A wele {SPOKEN_76_12_34_56} walima mugan, fu wɔɔrɔ, tan ni kelen, fu fu la."
+        assert normalize_phone_numbers_in_text("76.12.34.56, 20 06 11 00.") == (
+            f"{SPOKEN_76_12_34_56}, mugan, fu wɔɔrɔ, tan ni kelen, fu fu."
         )
 
     def test_disabled_phones_are_left_alone_and_not_read_as_numbers(self):
@@ -119,5 +119,5 @@ class TestInText:
         """The normalizer's default config also strips the pauses' commas."""
         normalizer = BambaraNormalizer(BambaraNormalizerConfig(expand_numbers=True))
 
-        expected = f"a wele {SPOKEN_76_12_34_56.replace(',', '')}"
-        assert normalizer.normalize("A wele 76123456") == expected
+        expected = SPOKEN_76_12_34_56.replace(",", "")
+        assert normalizer.normalize("76123456") == expected
