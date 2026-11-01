@@ -217,11 +217,11 @@ The normalizer supports bidirectional date conversion between standard formats a
 ```python
 from bambara_normalizer import normalize
 
-normalize("A bɛ na 13-10-2024 la", expand_dates=True)   # ==> "a bɛ na oktɔburu tile tan ni saba san Baa fila ni mugan ni naani la"
+normalize("A bɛ na 13-10-2024 la", expand_dates=True)   # ==> "a bɛ na oktɔburu kalo tile tan ni saba san baa fila ni mugan ni naani la"
 normalize("A bɛ na 13-10-2024 la", expand_dates=False)  # => "a bɛ na 13-10-2024 la"
 
 # WER preset has expand_dates=True by default
-normalize("A bɛ na 25-01-2008 la", preset="wer")  # => "a bɛ na zanwuye tile mugan ni duuru san Baa fila ni seegin la"
+normalize("A bɛ na 25-01-2008 la", preset="wer")  # => "a bɛ na zanwuye kalo tile mugan ni duuru san baa fila ni seegin la"
 ```
 
 ### Date to Bambara (Text Normalization)
@@ -230,21 +230,21 @@ from bambara_normalizer import date_to_bambara, format_date_bambara, normalize_d
 from datetime import date
 
 # Single dates
-date_to_bambara(2024, 10, 13)      # => "Oktɔburu tile tan ni saba san baa fila ni mugan ni naani"
-date_to_bambara(2008, 1, 25)       # => "Zanwuye tile mugan ni duuru san baa fila ni seegin"
+date_to_bambara(2024, 10, 13)      # => "Oktɔburu kalo tile tan ni saba san baa fila ni mugan ni naani"
+date_to_bambara(2008, 1, 25)       # => "Zanwuye kalo tile mugan ni duuru san baa fila ni seegin"
 
-# With "kalo" (month) included
-date_to_bambara(2024, 10, 13, include_kalo=True)  # => "Oktɔburu kalo tile tan ni saba san ..."
+# Without "kalo" (month), which is said by default
+date_to_bambara(2024, 10, 13, include_kalo=False)  # => "Oktɔburu tile tan ni saba san ..."
 
 # With day of week
-date_to_bambara(2024, 10, 13, include_day_of_week=True)  # => "Kari Oktɔburu tile ..." (Sunday)
+date_to_bambara(2024, 10, 13, include_day_of_week=True)  # => "Kari Oktɔburu kalo tile ..." (Sunday)
 
 # From date object or string
-format_date_bambara(date(2024, 10, 13))  # => "Oktɔburu tile tan ni saba san ..."
-format_date_bambara("13-10-2024")        # => "Oktɔburu tile tan ni saba san ..."
+format_date_bambara(date(2024, 10, 13))  # => "Oktɔburu kalo tile tan ni saba san ..."
+format_date_bambara("13-10-2024")        # => "Oktɔburu kalo tile tan ni saba san ..."
 
 # In text
-normalize_dates_in_text("A bɛ na 13-10-2024 la")  # => "A bɛ na Oktɔburu tile tan ni saba san baa fila ni mugan ni naani la"
+normalize_dates_in_text("A bɛ na 13-10-2024 la")  # => "A bɛ na Oktɔburu kalo tile tan ni saba san baa fila ni mugan ni naani la"
 ```
 
 ### Bambara to Date (Inverse Text Normalization)
@@ -262,12 +262,14 @@ bambara_to_date("Zanwuye tile mugan ni duuru san baa fila ni seegin")
 
 Bambara dates follow this structure:
 ```
-[Month] (kalo) tile [day] san [year]
+[Month] kalo tile [day] san [year]
 ```
 
-Example: **13-10-2024** => `Oktɔburu tile tan ni saba san baa fila ni mugan ni naani`
+Example: **13-10-2024** => `Oktɔburu kalo tile tan ni saba san baa fila ni mugan ni naani`
 
-Literal translation: "October day thirteen year two thousand twenty-four"
+Literal translation: "October month day thirteen year two thousand twenty-four"
+
+`kalo` ("month") is said by default; pass `include_kalo=False` to leave it out.
 
 ### Days of the Week
 
@@ -664,7 +666,7 @@ text = "Ne taara sugu la 24-12-2025 la, 10:45 waati, ne ye tulu 6 l san, wari 12
 # => [('24-12-2025', 'date'), ('10:45', 'time'), ('6 l', 'measurement'), ('12 + 8 = 20', 'arithmetic')]
 
 normalize_numeric_expressions(text)
-# => "Ne taara sugu la Desanburu tile mugan ni naani san baa fila ni mugan ni duuru la, ..."
+# => "Ne taara sugu la Desanburu kalo tile mugan ni naani san baa fila ni mugan ni duuru la, ..."
 ```
 
 A span keeps its kind whether or not that kind is enabled, so partial configurations are safe: disabling one expander never lets another one mis-read its digits.
@@ -1109,7 +1111,7 @@ is_number_word("fɔ")                     # False
 
 
 # Date conversion: dates => Bambara
-date_to_bambara(2024, 10, 13)            # "Oktɔburu tile tan ni saba san baa fila ni mugan ni naani"
+date_to_bambara(2024, 10, 13)            # "Oktɔburu kalo tile tan ni saba san baa fila ni mugan ni naani"
 format_date_bambara("13-10-2024")        # Same as above
 
 # Date conversion: Bambara => dates

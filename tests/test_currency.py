@@ -205,7 +205,7 @@ class TestNumericExpressionsWithCurrency:
 
     def test_date_keeps_precedence_over_currency(self):
         assert normalize_numeric_expressions("24-12-2025 F", currency=True) == (
-            "Desanburu tile mugan ni naani san baa fila ni mugan ni duuru F"
+            "Desanburu kalo tile mugan ni naani san baa fila ni mugan ni duuru F"
         )
 
     def test_currency_takes_precedence_over_number(self):
