@@ -108,6 +108,7 @@ FRENCH_MONTHS = {
 }
 
 KALO = "kalo"
+FIRST_DAY = number_to_ordinal(1)
 TILE = "tile"
 SAN = "san"
 DON = "don"
@@ -273,7 +274,7 @@ def bambara_to_date(phrase: str) -> date:
     day_phrase = remainder[:san_idx].strip()
     year_phrase = remainder[san_idx + len(SAN) :].strip()
 
-    day = bambara_to_number(day_phrase)
+    day = 1 if day_phrase == FIRST_DAY else bambara_to_number(day_phrase)
     # year = bambara_to_number(year_phrase)
     year = _bambara_to_year(year_phrase)
 
@@ -311,16 +312,15 @@ def bambara_to_day_of_week(name: str) -> int:
     return DAYS_OF_WEEK_REVERSE[name_lower]
 
 
-def _month_and_day(
-    month: int, day: int, include_kalo: bool, day_as_ordinal: bool = False
-) -> list[str]:
+def _month_and_day(month: int, day: int, include_kalo: bool) -> list[str]:
     """
     The month and day words of a date, in spoken order: the month (with "kalo"),
-    then "tile" and the day. "1er" is said as the ordinal "fɔlɔ".
+    then "tile" and the day. The first of the month is "tile fɔlɔ" (the first
+    day), however the date is written; every other day is its cardinal.
     """
     month_name = MONTHS[month]
     month_words = f"{month_name} {KALO}" if include_kalo else month_name
-    day_word = number_to_ordinal(day) if day_as_ordinal else number_to_bambara(day)
+    day_word = FIRST_DAY if day == 1 else number_to_bambara(day)
     return [month_words, f"{TILE} {day_word}"]
 
 
@@ -407,7 +407,7 @@ def find_date_spans(text: str, include_kalo: bool = False) -> list[NumericSpan]:
         except ValueError:
             return None
 
-        parts = _month_and_day(month, day, include_kalo=include_kalo, day_as_ordinal=is_ordinal)
+        parts = _month_and_day(month, day, include_kalo=include_kalo)
         if year is not None:
             parts.append(f"{SAN} {_year_to_bambara(year)}")
         return " ".join(parts)

@@ -248,6 +248,22 @@ class TestFrenchMonthNameDates:
         """
         assert normalize_dates_in_text(text) == text
 
+    @pytest.mark.parametrize("text", ["1 janvier 2026", "01/01/2026", "2026-01-01"])
+    def test_first_of_the_month_is_always_folo(self, text):
+        """
+        The first day of a month is said "tile fɔlɔ" however it is written:
+        "1er janvier", "1 janvier" or "01/01".
+        """
+        result = normalize_numeric_expressions(text, include_kalo=True)
+
+        assert result == "Zanwuye kalo tile fɔlɔ san baa fila ni mugan ni wɔɔrɔ"
+
+    def test_date_on_the_first_parses_back(self):
+        """
+        "tile fɔlɔ" converts back to day 1.
+        """
+        assert bambara_to_date(date_to_bambara(2026, 1, 1, include_kalo=True)) == date(2026, 1, 1)
+
     def test_ordinal_suffix_only_for_the_first(self):
         """
         Only the first of the month is written "1er"; "2er janvier" is not a date.
