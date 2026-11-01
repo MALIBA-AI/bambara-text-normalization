@@ -68,7 +68,7 @@ class TestNotARange:
     def test_a_date_keeps_its_year(self):
         """The year of a date is not the start of a year range."""
         assert normalize_numeric_expressions("12-05-2024-2025").startswith(
-            "Mɛ tile tan ni fila san baa fila ni mugan ni naani"
+            "Mɛ kalo tile tan ni fila san baa fila ni mugan ni naani"
         )
 
 

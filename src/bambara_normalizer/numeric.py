@@ -57,7 +57,7 @@ from .times import find_time_spans
 
 def find_numeric_spans(
     text: str,
-    include_kalo: bool = False,
+    include_kalo: bool = True,
     currency: bool = False,
 ) -> list[NumericSpan]:
     """
@@ -86,7 +86,7 @@ def normalize_numeric_expressions(
     arithmetic: bool = True,
     measurements: bool = True,
     numbers: bool = True,
-    include_kalo: bool = False,
+    include_kalo: bool = True,
     currency: bool = False,
     ranges: bool = True,
 ) -> str:

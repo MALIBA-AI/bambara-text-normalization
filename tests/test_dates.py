@@ -275,3 +275,48 @@ class TestFrenchMonthNameDates:
         The month must be a whole word: "3 marsupiaux" is no date.
         """
         assert normalize_dates_in_text("3 marsupiaux") == "3 marsupiaux"
+
+
+class TestMonthWordKalo:
+    """
+    A date names the month with "kalo" after the month name ("Mɛ kalo"), the way
+    it is said; the word is on unless a caller turns it off.
+    """
+
+    def test_date_in_text_names_the_month_with_kalo(self):
+        """
+        A written date reads with "kalo" by default.
+        """
+        result = normalize_numeric_expressions("12/05/2026")
+
+        assert result == "Mɛ kalo tile tan ni fila san baa fila ni mugan ni wɔɔrɔ"
+
+    def test_date_to_bambara_includes_kalo_by_default(self):
+        """
+        The date function says "kalo" without being asked.
+        """
+        result = date_to_bambara(2024, 10, 13)
+
+        assert result == "Oktɔburu kalo tile tan ni saba san baa fila ni mugan ni naani"
+
+    def test_normalizer_reads_dates_with_kalo(self):
+        """
+        The full normalizer gives the same reading.
+        """
+        result = normalize("12/05/2026", expand_dates=True)
+
+        assert result == "mɛ kalo tile tan ni fila san baa fila ni mugan ni wɔɔrɔ"
+
+    def test_kalo_can_still_be_turned_off(self):
+        """
+        Callers that do not want the month word can still leave it out.
+        """
+        result = normalize_numeric_expressions("12/05/2026", include_kalo=False)
+
+        assert result == "Mɛ tile tan ni fila san baa fila ni mugan ni wɔɔrɔ"
+
+    def test_date_with_kalo_parses_back(self):
+        """
+        A date read with "kalo" converts back to the same date.
+        """
+        assert bambara_to_date(date_to_bambara(2026, 5, 12)) == date(2026, 5, 12)
