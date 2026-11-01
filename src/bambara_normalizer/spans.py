@@ -30,6 +30,7 @@ patterns would have run in), then left to right, longest first.
 
 from __future__ import annotations
 
+import bisect
 import re
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
@@ -121,13 +122,21 @@ def resolve_spans(candidates: Iterable[NumericSpan]) -> list[NumericSpan]:
     its text. This is what makes expansion order-independent: precedence is a
     property of the candidates, not of the sequence the expanders ran in.
     """
+    # Accepted spans never overlap, so kept in position order their starts and ends
+    # both increase, and a candidate can only collide with its two neighbours. A
+    # binary search finds them, which keeps long texts linear-ish instead of
+    # comparing every candidate with every accepted span.
     accepted: list[NumericSpan] = []
+    starts: list[int] = []
     for candidate in sorted(candidates, key=_precedence_key):
-        if any(candidate.overlaps(span) for span in accepted):
+        index = bisect.bisect_left(starts, candidate.start)
+        if index > 0 and accepted[index - 1].end > candidate.start:
             continue
-        accepted.append(candidate)
+        if index < len(accepted) and accepted[index].start < candidate.end:
+            continue
+        accepted.insert(index, candidate)
+        starts.insert(index, candidate.start)
 
-    accepted.sort(key=lambda span: span.start)
     return accepted
 
 
