@@ -5,6 +5,8 @@ import pytest
 from bambara_normalizer import (
     DAYS_OF_WEEK,
     MONTHS,
+    BambaraNormalizer,
+    BambaraNormalizerConfig,
     bambara_to_date,
     bambara_to_day_of_week,
     bambara_to_month,
@@ -320,3 +322,41 @@ class TestMonthWordKalo:
         A date read with "kalo" converts back to the same date.
         """
         assert bambara_to_date(date_to_bambara(2026, 5, 12)) == date(2026, 5, 12)
+
+
+class TestKaloSetting:
+    """
+    "kalo" can be turned on or off from the normalizer configuration, like the
+    other expansion settings.
+    """
+
+    def test_normalizer_says_kalo_by_default(self):
+        """
+        The default configuration says the month word.
+        """
+        normalizer = BambaraNormalizer(BambaraNormalizerConfig(expand_dates=True))
+
+        assert normalizer.normalize("1er janvier 2026") == (
+            "zanwuye kalo tile fɔlɔ san baa fila ni mugan ni wɔɔrɔ"
+        )
+
+    def test_normalizer_can_leave_kalo_out(self):
+        """
+        include_kalo=False drops the month word from every date.
+        """
+        config = BambaraNormalizerConfig(expand_dates=True, include_kalo=False)
+
+        result = BambaraNormalizer(config).normalize("1er janvier 2026 ni 12/05/2026")
+
+        assert result == (
+            "zanwuye tile fɔlɔ san baa fila ni mugan ni wɔɔrɔ "
+            "ni mɛ tile tan ni fila san baa fila ni mugan ni wɔɔrɔ"
+        )
+
+    def test_normalize_function_accepts_the_setting(self):
+        """
+        The one-call normalize() takes the same setting.
+        """
+        result = normalize("12/05/2026", expand_dates=True, include_kalo=False)
+
+        assert result == "mɛ tile tan ni fila san baa fila ni mugan ni wɔɔrɔ"

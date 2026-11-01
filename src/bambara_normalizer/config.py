@@ -46,6 +46,7 @@ class BambaraNormalizerConfig:
         expand_numbers: Convert digits to Bambara words
         expand_arithmetic: Convert arithmetic expressions (2 + 2 = 4) to Bambara
         expand_dates: Convert date patterns (DD-MM-YYYY) to Bambara
+        include_kalo: Say "kalo" (month) after the month name in dates
         remove_diacritics_except_tones: Remove non-tonal diacritics
         handle_french_loanwords: Apply French word normalization
         strip_repetitions: Normalize repeated characters
@@ -65,6 +66,7 @@ class BambaraNormalizerConfig:
     expand_numbers: bool = False
     expand_arithmetic: bool = False
     expand_dates: bool = False
+    include_kalo: bool = True
     expand_times: bool = False
     expand_measurements: bool = False
     expand_currency: bool = False
