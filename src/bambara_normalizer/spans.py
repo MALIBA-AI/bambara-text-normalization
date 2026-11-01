@@ -22,7 +22,7 @@ which of the (possibly overlapping) candidates win.
 
 Precedence is by kind, from most specific to most generic:
 
-    date > range > time > arithmetic > currency > measurement > number
+    date > range > time > arithmetic > currency > phone > measurement > number
 
 Within one kind, candidates are ordered by tier (the order the expander's own
 patterns would have run in), then left to right, longest first.
@@ -39,10 +39,11 @@ RANGE = "range"
 TIME = "time"
 ARITHMETIC = "arithmetic"
 CURRENCY = "currency"
+PHONE = "phone"
 MEASUREMENT = "measurement"
 NUMBER = "number"
 
-KIND_PRECEDENCE = (DATE, RANGE, TIME, ARITHMETIC, CURRENCY, MEASUREMENT, NUMBER)
+KIND_PRECEDENCE = (DATE, RANGE, TIME, ARITHMETIC, CURRENCY, PHONE, MEASUREMENT, NUMBER)
 
 _KIND_RANK = {kind: rank for rank, kind in enumerate(KIND_PRECEDENCE)}
 
@@ -54,7 +55,7 @@ class NumericSpan:
     Attributes:
         start: Start offset in the source text
         end: End offset in the source text (exclusive)
-        kind: One of DATE, RANGE, TIME, ARITHMETIC, CURRENCY, MEASUREMENT, NUMBER
+        kind: One of DATE, RANGE, TIME, ARITHMETIC, CURRENCY, PHONE, MEASUREMENT, NUMBER
         source: The matched text
         replacement: The Bambara expansion of `source`
         tier: Tie-break among candidates of the same kind (lower wins)

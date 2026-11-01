@@ -256,6 +256,8 @@ class BambaraNormalizer:
             include_kalo=self.config.include_kalo,
             # A range joins two times or two years, so it follows the time setting.
             ranges=self.config.expand_times,
+            # A phone number is digits read in pairs, so it follows the number setting.
+            phones=self.config.expand_numbers,
         )
 
         if self.config.normalize_special_chars:

@@ -671,14 +671,45 @@ Each end keeps the reading it has alone. Ranges are expanded by default in `norm
 
 ---
 
-## Numeric Expansion (dates, ranges, times, arithmetic, measurements, numbers)
+## Phone Number Normalization
 
-Dates, ranges, times, arithmetic, measurements and bare numbers all compete for the same digits. The normalizer resolves them in a **single classification pass**: every numeric span of the text is claimed by exactly one kind, and only then is anything rewritten. Expansion therefore does not depend on the order the expanders run in.
+A Malian phone number has eight digits. However it is written, it is read the same way: pair by pair, with a pause between pairs, after the country code when there is one.
+
+```python
+from bambara_normalizer import phone_number_to_bambara, normalize_phone_numbers_in_text
+
+phone_number_to_bambara("76 12 34 56")
+# => "bi wolonwula ni wɔɔrɔ, tan ni fila, bi saba ni naani, bi duuru ni wɔɔrɔ"
+
+phone_number_to_bambara("+22376123456")
+# => "kɛmɛ fila ni mugan ni saba, bi wolonwula ni wɔɔrɔ, tan ni fila, bi saba ni naani, bi duuru ni wɔɔrɔ"
+
+normalize_phone_numbers_in_text("20.06.11.00")
+# => "mugan, fu wɔɔrɔ, tan ni kelen, fu fu"
+```
+
+| Written | Read as a phone number |
+|---------|------------------------|
+| `76 12 34 56`, `76-12-34-56`, `76.12.34.56` | yes: four pairs sharing one separator |
+| `+223 76 12 34 56`, `+22376123456`, `00223 76 12 34 56`, `+223 76 123 456` | yes, after `kɛmɛ fila ni mugan ni saba`: with the country code, any grouping |
+| `76123456`, `50000000`, `76 123 456` | no: without a country code, unbroken digits and groups of three are an amount |
+| `76 12 34 56 FCFA`, `$76 12 34 56`, `20 30 40 50 kg` | no: a currency or unit next to the digits makes them an amount |
+| `12345678`, `12 34 56 78` | no: outside the numbering plan (a Malian number starts with 2 to 9) |
+
+Eight digits alone can be an amount or a phone number (`80000000`), and nothing in the digits says which, so this is a convention on how the number is written. **Limitation:** a phone number written unbroken without its country code (`76123456`) is read as an amount; write it in pairs or with `+223`.
+
+A pair starting with 0 is said digit by digit (`06` => `fu wɔɔrɔ`). Phone numbers are expanded by default in `normalize_numeric_expressions` (`phones=False` turns it off) and, in the normalizer, whenever numbers are expanded.
+
+---
+
+## Numeric Expansion (dates, ranges, times, arithmetic, phone numbers, measurements, numbers)
+
+Dates, ranges, times, arithmetic, phone numbers, measurements and bare numbers all compete for the same digits. The normalizer resolves them in a **single classification pass**: every numeric span of the text is claimed by exactly one kind, and only then is anything rewritten. Expansion therefore does not depend on the order the expanders run in.
 
 Precedence runs from the most specific shape to the most generic:
 
 ```
-date > range > time > arithmetic > currency > measurement > number
+date > range > time > arithmetic > currency > phone > measurement > number
 ```
 
 ```python
@@ -704,7 +735,7 @@ normalize("A bɛ 24-12-2025 la ni 3", expand_numbers=True, expand_dates=False, r
 # => "a bɛ 24-12-2025 la ni saba"
 ```
 
-The single-kind functions (`normalize_dates_in_text`, `normalize_times_in_text`, `normalize_arithmetic_in_text`, `normalize_currency_in_text`, `normalize_ranges_in_text`, `normalize_measurements_in_text`, `normalize_numbers_in_text`) each expand only their own shape and are unaware of the others — `normalize_numbers_in_text` will happily expand the digits of a date. Use `normalize_numeric_expressions` (or the normalizer, which calls it) for mixed text.
+The single-kind functions (`normalize_dates_in_text`, `normalize_times_in_text`, `normalize_arithmetic_in_text`, `normalize_currency_in_text`, `normalize_ranges_in_text`, `normalize_phone_numbers_in_text`, `normalize_measurements_in_text`, `normalize_numbers_in_text`) each expand only their own shape and are unaware of the others — `normalize_numbers_in_text` will happily expand the digits of a date. Use `normalize_numeric_expressions` (or the normalizer, which calls it) for mixed text.
 
 **Not resolved by precedence:** genuinely ambiguous shapes. `10-45` could be a date fragment or a ratio, and `24-12-2025` is read as DD-MM-YYYY, never MM-DD-YYYY. Precedence makes the choice *deterministic and documented*, not correct in every context.
 
