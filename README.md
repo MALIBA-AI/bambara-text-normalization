@@ -301,11 +301,11 @@ The normalizer supports bidirectional time and duration conversion between stand
 ```python
 from bambara_normalizer import normalize
 
-normalize("A nana 7:30 la", expand_times=True)   # => "a nana nɛgɛ kaɲɛ wolonwula ni sanga bi saba la"
+normalize("A nana 7:30 la", expand_times=True)   # => "a nana nɛgɛ kanɲɛ wolonwula ni sanga bi saba la"
 normalize("A nana 7:30 la", expand_times=False)  # => "a nana 7:30 la"
 
 # WER preset has expand_times=True by default
-normalize("A nana 13:50 la", preset="wer")  # => "a nana nɛgɛ kaɲɛ tan ni saba ni sanga bi duuru la"
+normalize("A nana 13:50 la", preset="wer")  # => "a nana nɛgɛ kanɲɛ tan ni saba ni sanga bi duuru la"
 ```
 
 ### Clock Time to Bambara (Text Normalization)
@@ -314,27 +314,27 @@ from bambara_normalizer import time_to_bambara, format_time_bambara, normalize_t
 from datetime import time
 
 # Clock times
-time_to_bambara(1, 0)       # => "Nɛgɛ kaɲɛ kelen"
-time_to_bambara(1, 5)       # => "Nɛgɛ kaɲɛ kelen ni sanga duuru"
-time_to_bambara(7, 30)      # => "Nɛgɛ kaɲɛ wolonwula  ni sanga bi saba"
-time_to_bambara(13, 50)     # => "Nɛgɛ kaɲɛ tan ni saba ni sanga bi duuru"
+time_to_bambara(1, 0)       # => "Nɛgɛ kanɲɛ kelen"
+time_to_bambara(1, 5)       # => "Nɛgɛ kanɲɛ kelen ni sanga duuru"
+time_to_bambara(7, 30)      # => "Nɛgɛ kanɲɛ wolonwula  ni sanga bi saba"
+time_to_bambara(13, 50)     # => "Nɛgɛ kanɲɛ tan ni saba ni sanga bi duuru"
 
 # From time object or string
-format_time_bambara(time(7, 30))  # => "Nɛgɛ kaɲɛ wolonwula ni sanga bi saba"
-format_time_bambara("13:50")      # => "Nɛgɛ kaɲɛ tan ni sab ni sanga bi duuru"
+format_time_bambara(time(7, 30))  # => "Nɛgɛ kanɲɛ wolonwula ni sanga bi saba"
+format_time_bambara("13:50")      # => "Nɛgɛ kanɲɛ tan ni sab ni sanga bi duuru"
 
 # In text
-normalize_times_in_text("A nana 7:30 la")  # => "A nana nɛgɛ kaɲɛ wolonwula ni sanga bi saba la"
+normalize_times_in_text("A nana 7:30 la")  # => "A nana nɛgɛ kanɲɛ wolonwula ni sanga bi saba la"
 ```
 
 ### Bambara to Clock Time (Inverse Text Normalization)
 ```python
 from bambara_normalizer import bambara_to_time
 
-bambara_to_time("Nɛgɛ kaɲɛ kelen")
+bambara_to_time("Nɛgɛ kanɲɛ kelen")
 # => datetime.time(1, 0)
 
-bambara_to_time("Nɛgɛ kaɲɛ wolonwula ni sanga bi saba")
+bambara_to_time("Nɛgɛ kanɲɛ wolonwula ni sanga bi saba")
 # => datetime.time(7, 30)
 ```
 
@@ -371,10 +371,10 @@ bambara_to_duration("lɛrɛ kelen ni miniti bi saba ni segɔni tan")
 
 Clock time follows this structure:
 ```
-Nɛgɛ kaɲɛ [hour] ( ni sanga [minutes])
+Nɛgɛ kanɲɛ [hour] ( ni sanga [minutes])
 ```
 
-Example: **7:30** => `Nɛgɛ kaɲɛ wolonwula ni sanga bi saba`
+Example: **7:30** => `Nɛgɛ kanɲɛ wolonwula ni sanga bi saba`
 
 Literal translation: "Clock needle seven passed with minute thirty"
 
@@ -382,6 +382,35 @@ Duration follows this structure:
 ```
 (lɛrɛ [hours] ni) (miniti [minutes] ni) (segɔni [seconds])
 ```
+
+#### Clock time or duration: the convention
+
+Bambara does not mark whether `8h` is a time of day or a length of time: `Nin kɛ 2h`
+can mean "do it at 2" or "do it in two hours". The normalizer cannot read the
+meaning of the sentence, and the surrounding words are no reliable cue, so it
+follows a convention on how the hour is written:
+
+| Written | Read as | Example |
+|---------|---------|---------|
+| `8h`, `8 h`, `8h00`, `10h30`, `14:30` | clock time | `8h` → `Nɛgɛ kanɲɛ seegin` |
+| `24h00`, `24:00` | clock time (end of day) | `Nɛgɛ kanɲɛ mugan ni naani` |
+| an hour no clock shows | duration | `48h` → `lɛrɛ bi naani ni seegin`, `25h30` → `lɛrɛ mugan ni duuru ni miniti bi saba` |
+| unit written as a word | duration | `8 heures`, `8 hrs`, `30 minutes`, `20 mn`, `1h30min` |
+
+A clock time counts minutes with `sanga`; a duration counts them with `miniti`.
+An impossible time written with a colon (`25:30`) is left as it is, because a
+colon also writes scores, ratios and verse numbers.
+
+A bare hour is a clock time because that is how it is written in French-style text:
+in human-translated Malian news, a bare `Xh` was a time of day in 7 of 9 cases
+(`à 4h du matin`, `vers 8h`), and both durations were `72 h`.
+
+**Limitation:** a sentence that means a duration but writes a bare hour, such as
+`A sɛgɛnna 2h` ("he was tired for 2 hours"), is read as a clock time. Write the
+duration with a unit word (`2 heures`) to get `lɛrɛ`.
+
+**Spelling:** the clock word is written `Nɛgɛ kanɲɛ`. Text written with the earlier
+spelling `Nɛgɛ kaɲɛ` still converts back to a time.
 
 Example: **1h30min10s** => `lɛrɛ kelen ni miniti bi saba ni segɔni tan`
 
@@ -1101,12 +1130,12 @@ is_bambara_day("Juma")                   # True
 
 
 # Time conversion: clock times → Bambara
-time_to_bambara(1, 0)                    # "Nɛgɛ kaɲɛ kelen"
-time_to_bambara(7, 30)                   # "Nɛgɛ kaɲɛ wolonwula ni sanga bi saba"
-format_time_bambara("13:50")             # "Nɛgɛ kaɲɛ tan ni saba ni sanga bi duuru"
+time_to_bambara(1, 0)                    # "Nɛgɛ kanɲɛ kelen"
+time_to_bambara(7, 30)                   # "Nɛgɛ kanɲɛ wolonwula ni sanga bi saba"
+format_time_bambara("13:50")             # "Nɛgɛ kanɲɛ tan ni saba ni sanga bi duuru"
 
 # Time conversion: Bambara → clock times
-bambara_to_time("Nɛgɛ kaɲɛ wolonwula ni sanga bi saba")  # datetime.time(7, 30)
+bambara_to_time("Nɛgɛ kanɲɛ wolonwula ni sanga bi saba")  # datetime.time(7, 30)
 
 # Duration conversion: durations → Bambara
 duration_to_bambara(minutes=30)          # "miniti bi saba"
@@ -1117,7 +1146,7 @@ format_duration_bambara("1h30min10s")    # "lɛrɛ kelen ni miniti bi saba ni se
 bambara_to_duration("lɛrɛ kelen ni miniti bi saba")  # (1, 30, 0)
 
 # Time normalization in text
-normalize_times_in_text("A nana 7:30 la")  # "A nana Nɛgɛ kaɲɛ wolonwula ... la"
+normalize_times_in_text("A nana 7:30 la")  # "A nana Nɛgɛ kanɲɛ wolonwula ... la"
 
 # Check if word is time-related
 is_time_word("lɛrɛ")                      # True
