@@ -96,6 +96,10 @@ from .phones import (
     normalize_phone_numbers_in_text,
     phone_number_to_bambara,
 )
+from .ranges import (
+    find_range_spans,
+    normalize_ranges_in_text,
+)
 from .spans import (
     KIND_PRECEDENCE,
     NumericSpan,
@@ -187,6 +191,8 @@ __all__ = [
     "currency_to_bambara",
     "find_currency_spans",
     "normalize_currency_in_text",
+    "find_range_spans",
+    "normalize_ranges_in_text",
     "phone_number_to_bambara",
     "find_phone_spans",
     "normalize_phone_numbers_in_text",

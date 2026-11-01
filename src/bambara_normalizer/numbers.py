@@ -127,6 +127,8 @@ NUMBER_TOKENS = (
 )
 
 
+PERCENT_WORD = "kɛmɛsarada"
+
 def number_to_bambara(n: int | float | str) -> str:
     """
     Convert a number to Bambara words.
@@ -410,14 +412,39 @@ def _replace_number(match: re.Match) -> str | None:
         return None
 
 
+
 def find_number_spans(text: str) -> list[NumericSpan]:
     """
     Find bare numerals in text and their Bambara expansions.
 
+    A numeral immediately followed (optionally separated by a single space) by a
+    percent sign is read as a single phrase: the number followed by the Bambara
+    word for "percent" (``kɛ̀mɛsarada``). The percent sign is
+    consumed by the span so it does not leak into the output.
+
     Numbers are the most generic numeric shape, so these spans lose against any
     overlapping date, time, or measurement span. See `spans.resolve_spans`.
     """
-    return find_spans(text, NUMBER_PATTERN, NUMBER, _replace_number)
+    spans = find_spans(text, NUMBER_PATTERN, NUMBER, _replace_number)
+    result = []
+    for span in spans:
+        i = span.end
+        if i < len(text) and text[i] == " ":
+            i += 1
+        if i < len(text) and text[i] == "%":
+            result.append(
+                NumericSpan(
+                    start=span.start,
+                    end=i + 1,
+                    kind=span.kind,
+                    source=text[span.start : i + 1],
+                    replacement=span.replacement + " " + PERCENT_WORD,
+                    tier=span.tier,
+                )
+            )
+        else:
+            result.append(span)
+    return result
 
 
 def normalize_numbers_in_text(text: str) -> str:

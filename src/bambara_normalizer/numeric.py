@@ -14,11 +14,11 @@
 """
 Single-pass expansion of every numeric expression in a text.
 
-Dates, times, arithmetic, currency, phone numbers, measurements, and numbers are
-recognized in one classification step, and each numeric span of the text is claimed
-by exactly one of them (precedence: date > time > arithmetic > currency > phone >
-measurement > number). Only then is anything rewritten, so the result never
-depends on the order the expanders are invoked in.
+Dates, ranges, times, arithmetic, currency, phone numbers, measurements, and
+numbers are recognized in one classification step, and each numeric span of the
+text is claimed by exactly one of them (precedence: date > range > time >
+arithmetic > currency > phone > measurement > number). Only then is anything
+rewritten, so the result never depends on the order the expanders are invoked in.
 
 A span classified as a date is a date whether or not date expansion is enabled:
 disabling `dates` leaves "24-12-2025" alone instead of letting the number
@@ -39,6 +39,7 @@ from .dates import find_date_spans
 from .measurements import find_measurement_spans
 from .numbers import find_number_spans
 from .phones import find_phone_spans
+from .ranges import find_range_spans
 from .spans import (
     ARITHMETIC,
     CURRENCY,
@@ -47,6 +48,7 @@ from .spans import (
     MEASUREMENT,
     NUMBER,
     PHONE,
+    RANGE,
     TIME,
     NumericSpan,
     apply_spans,
@@ -88,6 +90,7 @@ def normalize_numeric_expressions(
     numbers: bool = True,
     include_kalo: bool = False,
     currency: bool = False,
+    ranges: bool = True,
     phones: bool = True,
 ) -> str:
     """
@@ -102,6 +105,7 @@ def normalize_numeric_expressions(
         numbers: Expand bare numerals
         include_kalo: Include "kalo" after month names in date expansions
         currency: Expand money amounts ("5 000 FCFA", "$20"). Off by default.
+        ranges: Expand time and year ranges ("8h-10h", "2020-2025") with "fo"
         phones: Expand Malian phone numbers ("76 12 34 56"), pair by pair
 
     Returns:
@@ -117,6 +121,7 @@ def normalize_numeric_expressions(
     """
     enabled = {
         DATE: dates,
+        RANGE: ranges,
         TIME: times,
         ARITHMETIC: arithmetic,
         CURRENCY: currency,
@@ -153,6 +158,7 @@ def _kinds_to_scan(enabled: dict[str, bool]) -> tuple[str, ...]:
 def _candidates(text: str, kinds: tuple[str, ...], include_kalo: bool) -> list[NumericSpan]:
     finders = {
         DATE: lambda: find_date_spans(text, include_kalo=include_kalo),
+        RANGE: lambda: find_range_spans(text),
         TIME: lambda: find_time_spans(text),
         ARITHMETIC: lambda: find_arithmetic_spans(text),
         CURRENCY: lambda: find_currency_spans(text),

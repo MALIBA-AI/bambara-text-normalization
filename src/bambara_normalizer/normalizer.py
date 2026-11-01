@@ -253,6 +253,8 @@ class BambaraNormalizer:
             measurements=self.config.expand_measurements,
             numbers=self.config.expand_numbers,
             currency=self.config.expand_currency,
+            # A range joins two times or two years, so it follows the time setting.
+            ranges=self.config.expand_times,
             # A phone number is digits read in pairs, so it follows the number setting.
             phones=self.config.expand_numbers,
         )

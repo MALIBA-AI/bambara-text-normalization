@@ -616,6 +616,30 @@ Symbols and ISO codes may also come before the amount (`$20`, `USD 20`). Only a 
 
 ---
 
+## Range Normalization
+
+A dash between two times or two years is read as a range: both ends, joined by `fo` (until).
+
+```python
+from bambara_normalizer import normalize_ranges_in_text
+
+normalize_ranges_in_text("Butiki bɛ dayɛlɛ 8h-17h")
+# => "Butiki bɛ dayɛlɛ lɛrɛ seegin fo lɛrɛ tan ni wolonwula"
+
+normalize_ranges_in_text("2020-2025")
+# => "waa fila ni mugan fo waa fila ni mugan ni duuru"
+```
+
+| Written | Read as a range |
+|---------|-----------------|
+| `8h-10h`, `8h - 10h`, `14:00-16:00`, `9h-12h30` | yes: times are not subtracted |
+| `2020-2025`, `2020 - 2025`, `2026–2027` | yes: two increasing years |
+| `3-1`, `8 - 5`, `2025 - 2020` | no: the dash may be a minus sign, so the reading is unchanged |
+
+Each end keeps the reading it has alone. Ranges are expanded by default in `normalize_numeric_expressions` (`ranges=False` turns it off) and, in the normalizer, whenever times are expanded.
+
+---
+
 ## Phone Number Normalization
 
 A Malian phone number has eight digits. However it is written, it is read the same way: pair by pair, with a pause between pairs, after the country code when there is one.
@@ -644,14 +668,14 @@ A pair starting with 0 is said digit by digit (`06` => `fu wɔɔrɔ`). Only eigh
 
 ---
 
-## Numeric Expansion (dates, times, arithmetic, phone numbers, measurements, numbers)
+## Numeric Expansion (dates, ranges, times, arithmetic, phone numbers, measurements, numbers)
 
-Dates, times, arithmetic, phone numbers, measurements and bare numbers all compete for the same digits. The normalizer resolves them in a **single classification pass**: every numeric span of the text is claimed by exactly one kind, and only then is anything rewritten. Expansion therefore does not depend on the order the expanders run in.
+Dates, ranges, times, arithmetic, phone numbers, measurements and bare numbers all compete for the same digits. The normalizer resolves them in a **single classification pass**: every numeric span of the text is claimed by exactly one kind, and only then is anything rewritten. Expansion therefore does not depend on the order the expanders run in.
 
 Precedence runs from the most specific shape to the most generic:
 
 ```
-date > time > arithmetic > currency > phone > measurement > number
+date > range > time > arithmetic > currency > phone > measurement > number
 ```
 
 ```python
@@ -677,7 +701,7 @@ normalize("A bɛ 24-12-2025 la ni 3", expand_numbers=True, expand_dates=False, r
 # => "a bɛ 24-12-2025 la ni saba"
 ```
 
-The single-kind functions (`normalize_dates_in_text`, `normalize_times_in_text`, `normalize_arithmetic_in_text`, `normalize_currency_in_text`, `normalize_phone_numbers_in_text`, `normalize_measurements_in_text`, `normalize_numbers_in_text`) each expand only their own shape and are unaware of the others — `normalize_numbers_in_text` will happily expand the digits of a date. Use `normalize_numeric_expressions` (or the normalizer, which calls it) for mixed text.
+The single-kind functions (`normalize_dates_in_text`, `normalize_times_in_text`, `normalize_arithmetic_in_text`, `normalize_currency_in_text`, `normalize_ranges_in_text`, `normalize_phone_numbers_in_text`, `normalize_measurements_in_text`, `normalize_numbers_in_text`) each expand only their own shape and are unaware of the others — `normalize_numbers_in_text` will happily expand the digits of a date. Use `normalize_numeric_expressions` (or the normalizer, which calls it) for mixed text.
 
 **Not resolved by precedence:** genuinely ambiguous shapes. `10-45` could be a date fragment or a ratio, and `24-12-2025` is read as DD-MM-YYYY, never MM-DD-YYYY. Precedence makes the choice *deterministic and documented*, not correct in every context.
 
