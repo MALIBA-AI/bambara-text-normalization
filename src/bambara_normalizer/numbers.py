@@ -74,6 +74,15 @@ GROUP_SEPARATOR_PATTERN = re.compile(rf"(?<=\d)[{GROUP_SEPARATORS}](?=\d)")
 
 NUMBER_PATTERN = re.compile(rf"(?:{GROUPED_THOUSANDS}|\d+(?:[.,]\d+)*)")
 
+# Ordinals are written with a French suffix ("1er", "2e", "3ème", "2nd") or the
+# Bambara one ("5nan"). The suffix must end the word, so "2emploi" stays a
+# numeral glued to a word, and the numeral must not be the tail of a decimal,
+# so "2,5e" is not read as a fifth.
+ORDINAL_PATTERN = re.compile(
+    r"(?<![\w.,])(\d+)(?:ième|ieme|ème|eme|ère|ere|er|re|nde|nd|nan|è|e)(?!\w)",
+    re.IGNORECASE,
+)
+
 # A single comma followed by anything other than exactly three digits cannot be a
 # thousands separator, so it is the French decimal comma: "2,5", "12,75". Exactly
 # three digits ("1,500") stays a thousands group, as it always has.
@@ -412,6 +421,9 @@ def _replace_number(match: re.Match) -> str | None:
         return None
 
 
+def _replace_ordinal(match: re.Match) -> str:
+    return number_to_ordinal(int(match.group(1)))
+
 
 def find_number_spans(text: str) -> list[NumericSpan]:
     """
@@ -424,9 +436,12 @@ def find_number_spans(text: str) -> list[NumericSpan]:
 
     Numbers are the most generic numeric shape, so these spans lose against any
     overlapping date, time, or measurement span. See `spans.resolve_spans`.
+
+    An ordinal ("2e") and the bare numeral inside it ("2") both start at the
+    same offset; the ordinal is the longer span, so it wins the tie.
     """
     spans = find_spans(text, NUMBER_PATTERN, NUMBER, _replace_number)
-    result = []
+    result = find_spans(text, ORDINAL_PATTERN, NUMBER, _replace_ordinal)
     for span in spans:
         i = span.end
         if i < len(text) and text[i] == " ":

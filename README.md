@@ -269,7 +269,7 @@ Example: **13-10-2024** => `Oktɔburu kalo tile tan ni saba san baa fila ni muga
 
 Literal translation: "October month day thirteen year two thousand twenty-four"
 
-`kalo` ("month") is said by default; pass `include_kalo=False` to leave it out.
+`kalo` ("month") is said by default. To leave it out, pass `include_kalo=False` to the date functions, to `normalize()`, or to `BambaraNormalizerConfig`.
 
 ### Days of the Week
 

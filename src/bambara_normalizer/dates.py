@@ -17,7 +17,7 @@ from __future__ import annotations
 import re
 from datetime import date, datetime
 
-from .numbers import bambara_to_number, number_to_bambara
+from .numbers import bambara_to_number, number_to_bambara, number_to_ordinal
 from .spans import DATE, NumericSpan, find_spans, substitute
 
 DAYS_OF_WEEK = {
@@ -88,7 +88,27 @@ MONTHS_REVERSE.update(
     }
 )
 
+# French month names as written in French-language text, with and without accents.
+FRENCH_MONTHS = {
+    "janvier": 1,
+    "février": 2,
+    "fevrier": 2,
+    "mars": 3,
+    "avril": 4,
+    "mai": 5,
+    "juin": 6,
+    "juillet": 7,
+    "août": 8,
+    "aout": 8,
+    "septembre": 9,
+    "octobre": 10,
+    "novembre": 11,
+    "décembre": 12,
+    "decembre": 12,
+}
+
 KALO = "kalo"
+FIRST_DAY = number_to_ordinal(1)
 TILE = "tile"
 SAN = "san"
 DON = "don"
@@ -147,14 +167,7 @@ def date_to_bambara(
             day_of_week = date(year, month, day).weekday()
         parts.append(DAYS_OF_WEEK[day_of_week])
 
-    month_name = MONTHS[month]
-    if include_kalo:
-        parts.append(f"{month_name} {KALO}")
-    else:
-        parts.append(month_name)
-
-    day_word = number_to_bambara(day)
-    parts.append(f"{TILE} {day_word}")
+    parts.extend(_month_and_day(month, day, include_kalo=include_kalo))
 
     # year_word = number_to_bambara(year)
     year_word = _year_to_bambara(year)
@@ -261,7 +274,7 @@ def bambara_to_date(phrase: str) -> date:
     day_phrase = remainder[:san_idx].strip()
     year_phrase = remainder[san_idx + len(SAN) :].strip()
 
-    day = bambara_to_number(day_phrase)
+    day = 1 if day_phrase == FIRST_DAY else bambara_to_number(day_phrase)
     # year = bambara_to_number(year_phrase)
     year = _bambara_to_year(year_phrase)
 
@@ -299,6 +312,18 @@ def bambara_to_day_of_week(name: str) -> int:
     return DAYS_OF_WEEK_REVERSE[name_lower]
 
 
+def _month_and_day(month: int, day: int, include_kalo: bool) -> list[str]:
+    """
+    The month and day words of a date, in spoken order: the month (with "kalo"),
+    then "tile" and the day. The first of the month is "tile fɔlɔ" (the first
+    day), however the date is written; every other day is its cardinal.
+    """
+    month_name = MONTHS[month]
+    month_words = f"{month_name} {KALO}" if include_kalo else month_name
+    day_word = FIRST_DAY if day == 1 else number_to_bambara(day)
+    return [month_words, f"{TILE} {day_word}"]
+
+
 def month_to_bambara(month: int) -> str:
     """
     Convert month number to Bambara.
@@ -332,14 +357,23 @@ def bambara_to_month(name: str) -> int:
 
 DATE_FRENCH_PATTERN = re.compile(r"\b(\d{1,2})[-/](\d{1,2})[-/](\d{4})\b")
 DATE_ISO_PATTERN = re.compile(r"\b(\d{4})[-/](\d{1,2})[-/](\d{1,2})\b")
+# "1er janvier 2026", "15 mars": a day (the first may carry the ordinal suffix
+# "er"/"ère"/"re"), a French month name, and an optional year.
+_FRENCH_MONTH_NAMES = "|".join(sorted(FRENCH_MONTHS, key=len, reverse=True))
+DATE_MONTH_NAME_PATTERN = re.compile(
+    rf"(?<![\w.,])(\d{{1,2}})(er|ère|re)?\s+({_FRENCH_MONTH_NAMES})(?:\s+(\d{{4}}))?(?!\w)",
+    re.IGNORECASE,
+)
+# A leap year, so "29 février" without a year is accepted.
+_ANY_LEAP_YEAR = 2000
 
 
 def find_date_spans(text: str, include_kalo: bool = True) -> list[NumericSpan]:
     """
     Find date patterns in text and their Bambara expansions.
 
-    Recognizes DD-MM-YYYY / DD/MM/YYYY (French, tier 0) and YYYY-MM-DD (ISO,
-    tier 1). Dates are the most specific numeric shape, so these spans win over
+    Recognizes DD-MM-YYYY / DD/MM/YYYY and "1er janvier 2026" / "15 mars" (French,
+    tier 0) and YYYY-MM-DD (ISO, tier 1). Dates are the most specific numeric shape, so these spans win over
     any overlapping time, measurement, or number span.
     """
 
@@ -361,8 +395,26 @@ def find_date_spans(text: str, include_kalo: bool = True) -> list[NumericSpan]:
         except (ValueError, IndexError):
             return None
 
+    def replace_date_month_name(match: re.Match) -> str | None:
+        day = int(match.group(1))
+        is_ordinal = match.group(2) is not None
+        month = FRENCH_MONTHS[match.group(3).lower()]
+        year = int(match.group(4)) if match.group(4) else None
+        if is_ordinal and day != 1:
+            return None
+        try:
+            date(year or _ANY_LEAP_YEAR, month, day)
+        except ValueError:
+            return None
+
+        parts = _month_and_day(month, day, include_kalo=include_kalo)
+        if year is not None:
+            parts.append(f"{SAN} {_year_to_bambara(year)}")
+        return " ".join(parts)
+
     return [
         *find_spans(text, DATE_FRENCH_PATTERN, DATE, replace_date_french),
+        *find_spans(text, DATE_MONTH_NAME_PATTERN, DATE, replace_date_month_name),
         *find_spans(text, DATE_ISO_PATTERN, DATE, replace_date_iso, tier=1),
     ]
 

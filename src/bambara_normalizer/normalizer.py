@@ -253,6 +253,7 @@ class BambaraNormalizer:
             measurements=self.config.expand_measurements,
             numbers=self.config.expand_numbers,
             currency=self.config.expand_currency,
+            include_kalo=self.config.include_kalo,
             # A range joins two times or two years, so it follows the time setting.
             ranges=self.config.expand_times,
         )
