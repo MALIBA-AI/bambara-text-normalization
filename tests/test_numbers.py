@@ -211,6 +211,8 @@ class TestPercent:
         [
             ("50%", "bi duuru kɛmɛsarada"),
             ("50 %", "bi duuru kɛmɛsarada"),
+            ("50  %", "bi duuru kɛmɛsarada"),
+            ("50     %", "bi duuru kɛmɛsarada"),
             ("50 %", "bi duuru kɛmɛsarada"),
             ("50 %", "bi duuru kɛmɛsarada"),
         ],
@@ -223,6 +225,8 @@ class TestPercent:
         [
             ("12,5%", "tan ni fila tomi duuru kɛmɛsarada"),
             ("12,5 %", "tan ni fila tomi duuru kɛmɛsarada"),
+            ("12,5  %", "tan ni fila tomi duuru kɛmɛsarada"),
+            ("12,5    %", "tan ni fila tomi duuru kɛmɛsarada"),
             ("12,5 %", "tan ni fila tomi duuru kɛmɛsarada"),
             ("12,5 %", "tan ni fila tomi duuru kɛmɛsarada"),
         ],
