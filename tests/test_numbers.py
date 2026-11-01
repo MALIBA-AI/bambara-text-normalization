@@ -213,6 +213,9 @@ class TestPercent:
             ("50 %", "bi duuru kɛmɛsarada"),
             ("50 %", "bi duuru kɛmɛsarada"),
             ("50 %", "bi duuru kɛmɛsarada"),
+            ("50  %", "bi duuru kɛmɛsarada"),
+            ("50  %", "bi duuru kɛmɛsarada"),
+            ("50   %", "bi duuru kɛmɛsarada"),
         ],
     )
     def test_whole_number(self, text, expected):
