@@ -134,11 +134,16 @@ def _is_written_as_a_phone_number(match: re.Match) -> bool:
     return match.group("separator") is not None
 
 
+# Room for the longest prefix currency and the spaces after it. Looking further back
+# would only re-scan the text before every match, which grows with the text.
+_PREFIX_WINDOW = max(len(currency) for currency in PREFIX_CURRENCIES) + 4
+
+
 def _counts_something(match: re.Match) -> bool:
     text = match.string
+    before = text[max(0, match.start() - _PREFIX_WINDOW) : match.start()]
     return bool(
-        COUNTED_AFTER_PATTERN.match(text, match.end())
-        or COUNTED_BEFORE_PATTERN.search(text[: match.start()])
+        COUNTED_AFTER_PATTERN.match(text, match.end()) or COUNTED_BEFORE_PATTERN.search(before)
     )
 
 
