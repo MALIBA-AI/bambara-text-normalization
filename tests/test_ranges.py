@@ -14,11 +14,11 @@ class TestTimeRanges:
     @pytest.mark.parametrize(
         ("text", "expected"),
         [
-            ("8h-10h", "lɛrɛ seegin fo lɛrɛ tan"),
-            ("8h - 10h", "lɛrɛ seegin fo lɛrɛ tan"),
-            ("8h–10h", "lɛrɛ seegin fo lɛrɛ tan"),
-            ("14:00-16:00", "Nɛgɛ kaɲɛ tan ni naani fo Nɛgɛ kaɲɛ tan ni wɔɔrɔ"),
-            ("9h-12h30", "lɛrɛ kɔnɔntɔn fo Nɛgɛ kaɲɛ tan ni fila ni sanga bi saba"),
+            ("8h-10h", "Nɛgɛ kanɲɛ seegin fo Nɛgɛ kanɲɛ tan"),
+            ("8h - 10h", "Nɛgɛ kanɲɛ seegin fo Nɛgɛ kanɲɛ tan"),
+            ("8h–10h", "Nɛgɛ kanɲɛ seegin fo Nɛgɛ kanɲɛ tan"),
+            ("14:00-16:00", "Nɛgɛ kanɲɛ tan ni naani fo Nɛgɛ kanɲɛ tan ni wɔɔrɔ"),
+            ("9h-12h30", "Nɛgɛ kanɲɛ kɔnɔntɔn fo Nɛgɛ kanɲɛ tan ni fila ni sanga bi saba"),
         ],
     )
     def test_two_times_joined_by_a_dash_are_a_range(self, text, expected):
@@ -75,7 +75,7 @@ class TestNotARange:
 class TestInText:
     def test_ranges_in_a_sentence(self):
         assert normalize_ranges_in_text("Butiki bɛ dayɛlɛ 8h-17h.") == (
-            "Butiki bɛ dayɛlɛ lɛrɛ seegin fo lɛrɛ tan ni wolonwula."
+            "Butiki bɛ dayɛlɛ Nɛgɛ kanɲɛ seegin fo Nɛgɛ kanɲɛ tan ni wolonwula."
         )
 
     def test_disabled_ranges_are_left_alone(self):
@@ -85,4 +85,4 @@ class TestInText:
     def test_the_normalizer_reads_ranges_when_it_expands_times(self):
         normalizer = BambaraNormalizer(BambaraNormalizerConfig(expand_times=True))
 
-        assert normalizer.normalize("8h-10h") == "lɛrɛ seegin fo lɛrɛ tan"
+        assert normalizer.normalize("8h-10h") == "nɛgɛ kanɲɛ seegin fo nɛgɛ kanɲɛ tan"

@@ -110,7 +110,7 @@ def normalize_numeric_expressions(
 
     Examples:
         >>> normalize_numeric_expressions("Ne ye tulu 6 l san 10:45")
-        'Ne ye litiri wɔɔrɔ san Nɛgɛ kaɲɛ tan ni sanga bi naani ni duuru'
+        'Ne ye litiri wɔɔrɔ san Nɛgɛ kanɲɛ tan ni sanga bi naani ni duuru'
 
         >>> normalize_numeric_expressions("A bɛ 24-12-2025 la", dates=False)
         'A bɛ 24-12-2025 la'
