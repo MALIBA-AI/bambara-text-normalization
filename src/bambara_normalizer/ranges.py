@@ -17,8 +17,8 @@ Range normalization for Bambara.
 A dash between two times or two years is a range, read with "fo" (until) between
 the two ends:
 
-    8h-10h       ->  lɛrɛ seegin fo lɛrɛ tan
-    14:00-16:00  ->  Nɛgɛ kaɲɛ tan ni naani fo Nɛgɛ kaɲɛ tan ni wɔɔrɔ
+    8h-10h       ->  Nɛgɛ kanɲɛ seegin fo Nɛgɛ kanɲɛ tan
+    14:00-16:00  ->  Nɛgɛ kanɲɛ tan ni naani fo Nɛgɛ kanɲɛ tan ni wɔɔrɔ
     2020-2025    ->  waa fila ni mugan fo waa fila ni mugan ni duuru
 
 Only these two shapes are read as ranges, because only there the dash cannot be a
@@ -98,7 +98,7 @@ def normalize_ranges_in_text(text: str) -> str:
 
     Examples:
         >>> normalize_ranges_in_text("Butiki bɛ dayɛlɛ 8h-17h")
-        'Butiki bɛ dayɛlɛ lɛrɛ seegin fo lɛrɛ tan ni wolonwula'
+        'Butiki bɛ dayɛlɛ Nɛgɛ kanɲɛ seegin fo Nɛgɛ kanɲɛ tan ni wolonwula'
 
         >>> normalize_ranges_in_text("2020-2025")
         'waa fila ni mugan fo waa fila ni mugan ni duuru'
