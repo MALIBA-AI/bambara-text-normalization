@@ -57,7 +57,7 @@ from .times import find_time_spans
 
 def find_numeric_spans(
     text: str,
-    include_kalo: bool = False,
+    include_kalo: bool = True,
     currency: bool = False,
 ) -> list[NumericSpan]:
     """
@@ -86,7 +86,7 @@ def normalize_numeric_expressions(
     arithmetic: bool = True,
     measurements: bool = True,
     numbers: bool = True,
-    include_kalo: bool = False,
+    include_kalo: bool = True,
     currency: bool = False,
     ranges: bool = True,
 ) -> str:
@@ -110,7 +110,7 @@ def normalize_numeric_expressions(
 
     Examples:
         >>> normalize_numeric_expressions("Ne ye tulu 6 l san 10:45")
-        'Ne ye litiri wɔɔrɔ san Nɛgɛ kaɲɛ tan ni sanga bi naani ni duuru'
+        'Ne ye litiri wɔɔrɔ san Nɛgɛ kanɲɛ tan ni sanga bi naani ni duuru'
 
         >>> normalize_numeric_expressions("A bɛ 24-12-2025 la", dates=False)
         'A bɛ 24-12-2025 la'
