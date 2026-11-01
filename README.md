@@ -659,12 +659,15 @@ normalize_phone_numbers_in_text("20.06.11.00")
 
 | Written | Read as a phone number |
 |---------|------------------------|
-| `76 12 34 56`, `76-12-34-56`, `76.12.34.56`, `76123456` | yes |
-| `+223 76 12 34 56`, `+22376123456`, `00223 76 12 34 56` | yes, after `kɛmɛ fila ni mugan ni saba` |
-| `12345678`, `12 345 678`, `76 123 456` | no: outside the numbering plan, or grouped as thousands |
-| `76123456 FCFA` (currency enabled) | no: a money amount wins |
+| `76 12 34 56`, `76-12-34-56`, `76.12.34.56` | yes: four pairs sharing one separator |
+| `+223 76 12 34 56`, `+22376123456`, `00223 76 12 34 56`, `+223 76 123 456` | yes, after `kɛmɛ fila ni mugan ni saba`: with the country code, any grouping |
+| `76123456`, `50000000`, `76 123 456` | no: without a country code, unbroken digits and groups of three are an amount |
+| `76 12 34 56 FCFA`, `$76 12 34 56`, `20 30 40 50 kg` | no: a currency or unit next to the digits makes them an amount |
+| `12345678`, `12 34 56 78` | no: outside the numbering plan (a Malian number starts with 2 to 9) |
 
-A pair starting with 0 is said digit by digit (`06` => `fu wɔɔrɔ`). Only eight digits starting with 2 to 9 qualify, and the pairs must share one separator. Phone numbers are expanded by default in `normalize_numeric_expressions` (`phones=False` turns it off) and, in the normalizer, whenever numbers are expanded.
+Eight digits alone can be an amount or a phone number (`80000000`), and nothing in the digits says which, so this is a convention on how the number is written. **Limitation:** a phone number written unbroken without its country code (`76123456`) is read as an amount; write it in pairs or with `+223`.
+
+A pair starting with 0 is said digit by digit (`06` => `fu wɔɔrɔ`). Phone numbers are expanded by default in `normalize_numeric_expressions` (`phones=False` turns it off) and, in the normalizer, whenever numbers are expanded.
 
 ---
 

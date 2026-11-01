@@ -24,15 +24,29 @@ A Malian number has eight digits. It is written in pairs ("76 12 34 56", "76-12-
 A pair starting with 0 is said digit by digit ("06" -> "fu wɔɔrɔ"): read as a number it
 would lose its zero.
 
-Only eight digits starting with 2 to 9, the first digits of the Malian numbering plan,
-are a phone number, and the pairs must share one separator. That keeps an amount
-("12345678", "76 123 456") and a date ("24-12-2025") out of it.
+Only eight digits starting with 2 to 9, the first digits of the Malian numbering plan
+(5 to 9 for mobiles, 2 to 4 for fixed lines), can be a phone number. Eight digits alone
+can as well be an amount ("80000000" is eighty million or a number), so in running text
+a phone number is recognized by convention, on how it is written:
+
+    - after the country code ("+223", "00223"), in any grouping: unbroken ("+22376123456"),
+      in pairs, or grouped 2-3-3 ("+223 76 123 456");
+    - without it, only as four pairs sharing one separator ("76 12 34 56", "76-12-34-56",
+      "76.12.34.56").
+
+Eight unbroken digits ("76123456") and digits grouped by three ("76 123 456") without a
+country code stay amounts, and so do digits next to a currency or a measurement unit
+("76 12 34 56 FCFA", "$76 12 34 56", "20 30 40 50 kg"). `phone_number_to_bambara` is
+called on a known phone number, so it accepts every grouping.
 """
 
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 
+from .currency import CURRENCY_TO_BAMBARA, PREFIX_CURRENCIES
+from .measurements import UNIT_TO_BAMBARA, UNIT_WORDS_TO_BAMBARA
 from .numbers import UNITS, number_to_bambara
 from .spans import PHONE, NumericSpan, find_spans, substitute
 
@@ -47,8 +61,27 @@ PHONE_PATTERN = re.compile(
     # Nothing chained on either side: no letter, no "+", and no further digit group.
     rf"(?<![\w+])(?<!\d{_SEPARATOR})"
     rf"(?:(?P<country>(?:\+|00){MALI_COUNTRY_CODE}){_SEPARATOR}?)?"
-    rf"(?P<number>[2-9]\d(?:(?P<separator>{_SEPARATOR})\d\d(?:(?P=separator)\d\d){{2}}|\d{{6}}))"
+    rf"(?P<number>[2-9]\d(?:"
+    rf"(?P<separator>{_SEPARATOR})\d\d(?:(?P=separator)\d\d){{2}}"
+    rf"|(?P<thousands_separator>{_SEPARATOR})\d{{3}}(?P=thousands_separator)\d{{3}}"
+    rf"|\d{{6}}))"
     rf"(?!{_SEPARATOR}?\d)(?!\w)"
+)
+
+
+def _alternation(words: Iterable[str]) -> str:
+    return "|".join(re.escape(word) for word in sorted(words, key=len, reverse=True))
+
+
+# A currency or unit written right after the digits, or a currency right before them,
+# means the digits count something: they are an amount, not a phone number.
+COUNTED_AFTER_PATTERN = re.compile(
+    rf"\s*(?:{_alternation([*CURRENCY_TO_BAMBARA, *UNIT_TO_BAMBARA, *UNIT_WORDS_TO_BAMBARA])})"
+    rf"(?!\w)",
+    re.IGNORECASE,
+)
+COUNTED_BEFORE_PATTERN = re.compile(
+    rf"(?<!\w)(?:{_alternation(PREFIX_CURRENCIES)})\s*$", re.IGNORECASE
 )
 
 
@@ -95,15 +128,36 @@ def _pair_to_bambara(pair: str) -> str:
     return number_to_bambara(int(pair))
 
 
+def _is_written_as_a_phone_number(match: re.Match) -> bool:
+    if match.group("country"):
+        return True
+    return match.group("separator") is not None
+
+
+def _counts_something(match: re.Match) -> bool:
+    text = match.string
+    return bool(
+        COUNTED_AFTER_PATTERN.match(text, match.end())
+        or COUNTED_BEFORE_PATTERN.search(text[: match.start()])
+    )
+
+
+def _replace_phone_number_in_text(match: re.Match) -> str | None:
+    if not _is_written_as_a_phone_number(match) or _counts_something(match):
+        return None
+    return _spoken_phone_number(match)
+
+
 def find_phone_spans(text: str) -> list[NumericSpan]:
     """
     Find Malian phone numbers in text and their Bambara expansions.
 
-    A phone number loses against dates, times, operations and money amounts, so
-    "76123456 FCFA" stays an amount, and wins over measurements and bare numbers, so its
-    digits are never read as one large number.
+    Only digits written as a phone number by the convention above are found; the rest
+    are left to the other kinds. A phone number loses against dates, times, operations
+    and money amounts, and wins over measurements and bare numbers, so its digits are
+    never read as one large number.
     """
-    return find_spans(text, PHONE_PATTERN, PHONE, _spoken_phone_number)
+    return find_spans(text, PHONE_PATTERN, PHONE, _replace_phone_number_in_text)
 
 
 def normalize_phone_numbers_in_text(text: str) -> str:
