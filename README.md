@@ -1124,7 +1124,7 @@ month_to_bambara(10)                     # "Oktɔburu"
 bambara_to_month("Oktɔburu")             # 10
 
 # Date normalization in text
-normalize_dates_in_text("A bɛ na 13-10-2024 la")  # "A bɛ na Oktɔburu tile ... la"
+normalize_dates_in_text("A bɛ na 13-10-2024 la")  # "A bɛ na Oktɔburu kalo tile ... la"
 
 # Check if word is date-related
 is_bambara_month("Oktɔburu")             # True
