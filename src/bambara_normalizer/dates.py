@@ -110,7 +110,7 @@ def date_to_bambara(
     year: int,
     month: int,
     day: int,
-    include_kalo: bool = False,
+    include_kalo: bool = True,
     include_day_of_week: bool = False,
     day_of_week: int | None = None,
 ) -> str:
@@ -130,10 +130,10 @@ def date_to_bambara(
 
     Examples:
         >>> date_to_bambara(2024, 10, 13)
-        'Oktɔburu tile tan ni saba san waa fila ni mugan ni naani'
+        'Oktɔburu kalo tile tan ni saba san baa fila ni mugan ni naani'
 
-        >>> date_to_bambara(2008, 1, 25, include_kalo=True)
-        'Zanwuye kalo tile mugan ni duuru san waa fila ni seegin'
+        >>> date_to_bambara(2008, 1, 25, include_kalo=False)
+        'Zanwuye tile mugan ni duuru san baa fila ni seegin'
     """
     if month < 1 or month > 12:
         raise ValueError(f"Invalid month: {month}")
@@ -164,7 +164,7 @@ def date_to_bambara(
 
 
 def format_date_bambara(
-    d: date | datetime | str, include_kalo: bool = False, include_day_of_week: bool = False
+    d: date | datetime | str, include_kalo: bool = True, include_day_of_week: bool = False
 ) -> str:
     """
     Format a date object or string to Bambara.
@@ -180,10 +180,10 @@ def format_date_bambara(
     Examples:
         >>> from datetime import date
         >>> format_date_bambara(date(2024, 10, 13))
-        'Oktɔburu tile tan ni saba san waa fila ni mugan ni naani'
+        'Oktɔburu kalo tile tan ni saba san baa fila ni mugan ni naani'
 
         >>> format_date_bambara("13-10-2024")
-        'Oktɔburu tile tan ni saba san waa fila ni mugan ni naani'
+        'Oktɔburu kalo tile tan ni saba san baa fila ni mugan ni naani'
     """
     if isinstance(d, str):
         d = parse_date_string(d)
@@ -227,7 +227,7 @@ def bambara_to_date(phrase: str) -> date:
         date object
 
     Examples:
-        >>> bambara_to_date("Oktɔburu tile tan ni saba san waa fila ni mugan ni naani")
+        >>> bambara_to_date("Oktɔburu kalo tile tan ni saba san baa fila ni mugan ni naani")
         datetime.date(2024, 10, 13)
     """
     phrase_lower = phrase.lower().strip()
@@ -334,7 +334,7 @@ DATE_FRENCH_PATTERN = re.compile(r"\b(\d{1,2})[-/](\d{1,2})[-/](\d{4})\b")
 DATE_ISO_PATTERN = re.compile(r"\b(\d{4})[-/](\d{1,2})[-/](\d{1,2})\b")
 
 
-def find_date_spans(text: str, include_kalo: bool = False) -> list[NumericSpan]:
+def find_date_spans(text: str, include_kalo: bool = True) -> list[NumericSpan]:
     """
     Find date patterns in text and their Bambara expansions.
 
@@ -367,7 +367,7 @@ def find_date_spans(text: str, include_kalo: bool = False) -> list[NumericSpan]:
     ]
 
 
-def normalize_dates_in_text(text: str, include_kalo: bool = False) -> str:
+def normalize_dates_in_text(text: str, include_kalo: bool = True) -> str:
     """
     Replace date patterns in text with Bambara.
 
@@ -384,7 +384,7 @@ def normalize_dates_in_text(text: str, include_kalo: bool = False) -> str:
 
     Examples:
         >>> normalize_dates_in_text("A bɛ 13-10-2024 la")
-        'A bɛ Oktɔburu tile tan ni saba san waa fila ni mugan ni naani la'
+        'A bɛ Oktɔburu kalo tile tan ni saba san baa fila ni mugan ni naani la'
     """
     return substitute(text, find_date_spans(text, include_kalo=include_kalo))
 
