@@ -217,11 +217,11 @@ The normalizer supports bidirectional date conversion between standard formats a
 ```python
 from bambara_normalizer import normalize
 
-normalize("A bɛ na 13-10-2024 la", expand_dates=True)   # ==> "a bɛ na oktɔburu tile tan ni saba san Baa fila ni mugan ni naani la"
+normalize("A bɛ na 13-10-2024 la", expand_dates=True)   # ==> "a bɛ na oktɔburu kalo tile tan ni saba san baa fila ni mugan ni naani la"
 normalize("A bɛ na 13-10-2024 la", expand_dates=False)  # => "a bɛ na 13-10-2024 la"
 
 # WER preset has expand_dates=True by default
-normalize("A bɛ na 25-01-2008 la", preset="wer")  # => "a bɛ na zanwuye tile mugan ni duuru san Baa fila ni seegin la"
+normalize("A bɛ na 25-01-2008 la", preset="wer")  # => "a bɛ na zanwuye kalo tile mugan ni duuru san baa fila ni seegin la"
 ```
 
 ### Date to Bambara (Text Normalization)
@@ -230,21 +230,21 @@ from bambara_normalizer import date_to_bambara, format_date_bambara, normalize_d
 from datetime import date
 
 # Single dates
-date_to_bambara(2024, 10, 13)      # => "Oktɔburu tile tan ni saba san baa fila ni mugan ni naani"
-date_to_bambara(2008, 1, 25)       # => "Zanwuye tile mugan ni duuru san baa fila ni seegin"
+date_to_bambara(2024, 10, 13)      # => "Oktɔburu kalo tile tan ni saba san baa fila ni mugan ni naani"
+date_to_bambara(2008, 1, 25)       # => "Zanwuye kalo tile mugan ni duuru san baa fila ni seegin"
 
-# With "kalo" (month) included
-date_to_bambara(2024, 10, 13, include_kalo=True)  # => "Oktɔburu kalo tile tan ni saba san ..."
+# Without "kalo" (month), which is said by default
+date_to_bambara(2024, 10, 13, include_kalo=False)  # => "Oktɔburu tile tan ni saba san ..."
 
 # With day of week
-date_to_bambara(2024, 10, 13, include_day_of_week=True)  # => "Kari Oktɔburu tile ..." (Sunday)
+date_to_bambara(2024, 10, 13, include_day_of_week=True)  # => "Kari Oktɔburu kalo tile ..." (Sunday)
 
 # From date object or string
-format_date_bambara(date(2024, 10, 13))  # => "Oktɔburu tile tan ni saba san ..."
-format_date_bambara("13-10-2024")        # => "Oktɔburu tile tan ni saba san ..."
+format_date_bambara(date(2024, 10, 13))  # => "Oktɔburu kalo tile tan ni saba san ..."
+format_date_bambara("13-10-2024")        # => "Oktɔburu kalo tile tan ni saba san ..."
 
 # In text
-normalize_dates_in_text("A bɛ na 13-10-2024 la")  # => "A bɛ na Oktɔburu tile tan ni saba san baa fila ni mugan ni naani la"
+normalize_dates_in_text("A bɛ na 13-10-2024 la")  # => "A bɛ na Oktɔburu kalo tile tan ni saba san baa fila ni mugan ni naani la"
 ```
 
 ### Bambara to Date (Inverse Text Normalization)
@@ -262,12 +262,14 @@ bambara_to_date("Zanwuye tile mugan ni duuru san baa fila ni seegin")
 
 Bambara dates follow this structure:
 ```
-[Month] (kalo) tile [day] san [year]
+[Month] kalo tile [day] san [year]
 ```
 
-Example: **13-10-2024** => `Oktɔburu tile tan ni saba san baa fila ni mugan ni naani`
+Example: **13-10-2024** => `Oktɔburu kalo tile tan ni saba san baa fila ni mugan ni naani`
 
-Literal translation: "October day thirteen year two thousand twenty-four"
+Literal translation: "October month day thirteen year two thousand twenty-four"
+
+`kalo` ("month") is said by default. To leave it out, pass `include_kalo=False` to the date functions, to `normalize()`, or to `BambaraNormalizerConfig`.
 
 ### Days of the Week
 
@@ -301,11 +303,11 @@ The normalizer supports bidirectional time and duration conversion between stand
 ```python
 from bambara_normalizer import normalize
 
-normalize("A nana 7:30 la", expand_times=True)   # => "a nana nɛgɛ kaɲɛ wolonwula ni sanga bi saba la"
+normalize("A nana 7:30 la", expand_times=True)   # => "a nana nɛgɛ kanɲɛ wolonwula ni sanga bi saba la"
 normalize("A nana 7:30 la", expand_times=False)  # => "a nana 7:30 la"
 
 # WER preset has expand_times=True by default
-normalize("A nana 13:50 la", preset="wer")  # => "a nana nɛgɛ kaɲɛ tan ni saba ni sanga bi duuru la"
+normalize("A nana 13:50 la", preset="wer")  # => "a nana nɛgɛ kanɲɛ tan ni saba ni sanga bi duuru la"
 ```
 
 ### Clock Time to Bambara (Text Normalization)
@@ -314,27 +316,27 @@ from bambara_normalizer import time_to_bambara, format_time_bambara, normalize_t
 from datetime import time
 
 # Clock times
-time_to_bambara(1, 0)       # => "Nɛgɛ kaɲɛ kelen"
-time_to_bambara(1, 5)       # => "Nɛgɛ kaɲɛ kelen ni sanga duuru"
-time_to_bambara(7, 30)      # => "Nɛgɛ kaɲɛ wolonwula  ni sanga bi saba"
-time_to_bambara(13, 50)     # => "Nɛgɛ kaɲɛ tan ni saba ni sanga bi duuru"
+time_to_bambara(1, 0)       # => "Nɛgɛ kanɲɛ kelen"
+time_to_bambara(1, 5)       # => "Nɛgɛ kanɲɛ kelen ni sanga duuru"
+time_to_bambara(7, 30)      # => "Nɛgɛ kanɲɛ wolonwula  ni sanga bi saba"
+time_to_bambara(13, 50)     # => "Nɛgɛ kanɲɛ tan ni saba ni sanga bi duuru"
 
 # From time object or string
-format_time_bambara(time(7, 30))  # => "Nɛgɛ kaɲɛ wolonwula ni sanga bi saba"
-format_time_bambara("13:50")      # => "Nɛgɛ kaɲɛ tan ni sab ni sanga bi duuru"
+format_time_bambara(time(7, 30))  # => "Nɛgɛ kanɲɛ wolonwula ni sanga bi saba"
+format_time_bambara("13:50")      # => "Nɛgɛ kanɲɛ tan ni sab ni sanga bi duuru"
 
 # In text
-normalize_times_in_text("A nana 7:30 la")  # => "A nana nɛgɛ kaɲɛ wolonwula ni sanga bi saba la"
+normalize_times_in_text("A nana 7:30 la")  # => "A nana nɛgɛ kanɲɛ wolonwula ni sanga bi saba la"
 ```
 
 ### Bambara to Clock Time (Inverse Text Normalization)
 ```python
 from bambara_normalizer import bambara_to_time
 
-bambara_to_time("Nɛgɛ kaɲɛ kelen")
+bambara_to_time("Nɛgɛ kanɲɛ kelen")
 # => datetime.time(1, 0)
 
-bambara_to_time("Nɛgɛ kaɲɛ wolonwula ni sanga bi saba")
+bambara_to_time("Nɛgɛ kanɲɛ wolonwula ni sanga bi saba")
 # => datetime.time(7, 30)
 ```
 
@@ -371,10 +373,10 @@ bambara_to_duration("lɛrɛ kelen ni miniti bi saba ni segɔni tan")
 
 Clock time follows this structure:
 ```
-Nɛgɛ kaɲɛ [hour] ( ni sanga [minutes])
+Nɛgɛ kanɲɛ [hour] ( ni sanga [minutes])
 ```
 
-Example: **7:30** => `Nɛgɛ kaɲɛ wolonwula ni sanga bi saba`
+Example: **7:30** => `Nɛgɛ kanɲɛ wolonwula ni sanga bi saba`
 
 Literal translation: "Clock needle seven passed with minute thirty"
 
@@ -382,6 +384,35 @@ Duration follows this structure:
 ```
 (lɛrɛ [hours] ni) (miniti [minutes] ni) (segɔni [seconds])
 ```
+
+#### Clock time or duration: the convention
+
+Bambara does not mark whether `8h` is a time of day or a length of time: `Nin kɛ 2h`
+can mean "do it at 2" or "do it in two hours". The normalizer cannot read the
+meaning of the sentence, and the surrounding words are no reliable cue, so it
+follows a convention on how the hour is written:
+
+| Written | Read as | Example |
+|---------|---------|---------|
+| `8h`, `8 h`, `8h00`, `10h30`, `14:30` | clock time | `8h` → `Nɛgɛ kanɲɛ seegin` |
+| `24h00`, `24:00` | clock time (end of day) | `Nɛgɛ kanɲɛ mugan ni naani` |
+| an hour no clock shows | duration | `48h` → `lɛrɛ bi naani ni seegin`, `25h30` → `lɛrɛ mugan ni duuru ni miniti bi saba` |
+| unit written as a word | duration | `8 heures`, `8 hrs`, `30 minutes`, `20 mn`, `1h30min` |
+
+A clock time counts minutes with `sanga`; a duration counts them with `miniti`.
+An impossible time written with a colon (`25:30`) is left as it is, because a
+colon also writes scores, ratios and verse numbers.
+
+A bare hour is a clock time because that is how it is written in French-style text:
+in human-translated Malian news, a bare `Xh` was a time of day in 7 of 9 cases
+(`à 4h du matin`, `vers 8h`), and both durations were `72 h`.
+
+**Limitation:** a sentence that means a duration but writes a bare hour, such as
+`A sɛgɛnna 2h` ("he was tired for 2 hours"), is read as a clock time. Write the
+duration with a unit word (`2 heures`) to get `lɛrɛ`.
+
+**Spelling:** the clock word is written `Nɛgɛ kanɲɛ`. Text written with the earlier
+spelling `Nɛgɛ kaɲɛ` still converts back to a time.
 
 Example: **1h30min10s** => `lɛrɛ kelen ni miniti bi saba ni segɔni tan`
 
@@ -616,14 +647,38 @@ Symbols and ISO codes may also come before the amount (`$20`, `USD 20`). Only a 
 
 ---
 
-## Numeric Expansion (dates, times, arithmetic, measurements, numbers)
+## Range Normalization
 
-Dates, times, arithmetic, measurements and bare numbers all compete for the same digits. The normalizer resolves them in a **single classification pass**: every numeric span of the text is claimed by exactly one kind, and only then is anything rewritten. Expansion therefore does not depend on the order the expanders run in.
+A dash between two times or two years is read as a range: both ends, joined by `fo` (until).
+
+```python
+from bambara_normalizer import normalize_ranges_in_text
+
+normalize_ranges_in_text("Butiki bɛ dayɛlɛ 8h-17h")
+# => "Butiki bɛ dayɛlɛ Nɛgɛ kanɲɛ seegin fo Nɛgɛ kanɲɛ tan ni wolonwula"
+
+normalize_ranges_in_text("2020-2025")
+# => "waa fila ni mugan fo waa fila ni mugan ni duuru"
+```
+
+| Written | Read as a range |
+|---------|-----------------|
+| `8h-10h`, `8h - 10h`, `14:00-16:00`, `9h-12h30` | yes: times are not subtracted |
+| `2020-2025`, `2020 - 2025`, `2026–2027` | yes: two increasing years |
+| `3-1`, `8 - 5`, `2025 - 2020` | no: the dash may be a minus sign, so the reading is unchanged |
+
+Each end keeps the reading it has alone. Ranges are expanded by default in `normalize_numeric_expressions` (`ranges=False` turns it off) and, in the normalizer, whenever times are expanded.
+
+---
+
+## Numeric Expansion (dates, ranges, times, arithmetic, measurements, numbers)
+
+Dates, ranges, times, arithmetic, measurements and bare numbers all compete for the same digits. The normalizer resolves them in a **single classification pass**: every numeric span of the text is claimed by exactly one kind, and only then is anything rewritten. Expansion therefore does not depend on the order the expanders run in.
 
 Precedence runs from the most specific shape to the most generic:
 
 ```
-date > time > arithmetic > currency > measurement > number
+date > range > time > arithmetic > currency > measurement > number
 ```
 
 ```python
@@ -635,7 +690,7 @@ text = "Ne taara sugu la 24-12-2025 la, 10:45 waati, ne ye tulu 6 l san, wari 12
 # => [('24-12-2025', 'date'), ('10:45', 'time'), ('6 l', 'measurement'), ('12 + 8 = 20', 'arithmetic')]
 
 normalize_numeric_expressions(text)
-# => "Ne taara sugu la Desanburu tile mugan ni naani san baa fila ni mugan ni duuru la, ..."
+# => "Ne taara sugu la Desanburu kalo tile mugan ni naani san baa fila ni mugan ni duuru la, ..."
 ```
 
 A span keeps its kind whether or not that kind is enabled, so partial configurations are safe: disabling one expander never lets another one mis-read its digits.
@@ -649,7 +704,7 @@ normalize("A bɛ 24-12-2025 la ni 3", expand_numbers=True, expand_dates=False, r
 # => "a bɛ 24-12-2025 la ni saba"
 ```
 
-The single-kind functions (`normalize_dates_in_text`, `normalize_times_in_text`, `normalize_arithmetic_in_text`, `normalize_currency_in_text`, `normalize_measurements_in_text`, `normalize_numbers_in_text`) each expand only their own shape and are unaware of the others — `normalize_numbers_in_text` will happily expand the digits of a date. Use `normalize_numeric_expressions` (or the normalizer, which calls it) for mixed text.
+The single-kind functions (`normalize_dates_in_text`, `normalize_times_in_text`, `normalize_arithmetic_in_text`, `normalize_currency_in_text`, `normalize_ranges_in_text`, `normalize_measurements_in_text`, `normalize_numbers_in_text`) each expand only their own shape and are unaware of the others — `normalize_numbers_in_text` will happily expand the digits of a date. Use `normalize_numeric_expressions` (or the normalizer, which calls it) for mixed text.
 
 **Not resolved by precedence:** genuinely ambiguous shapes. `10-45` could be a date fragment or a ratio, and `24-12-2025` is read as DD-MM-YYYY, never MM-DD-YYYY. Precedence makes the choice *deterministic and documented*, not correct in every context.
 
@@ -1080,7 +1135,7 @@ is_number_word("fɔ")                     # False
 
 
 # Date conversion: dates => Bambara
-date_to_bambara(2024, 10, 13)            # "Oktɔburu tile tan ni saba san baa fila ni mugan ni naani"
+date_to_bambara(2024, 10, 13)            # "Oktɔburu kalo tile tan ni saba san baa fila ni mugan ni naani"
 format_date_bambara("13-10-2024")        # Same as above
 
 # Date conversion: Bambara => dates
@@ -1093,7 +1148,7 @@ month_to_bambara(10)                     # "Oktɔburu"
 bambara_to_month("Oktɔburu")             # 10
 
 # Date normalization in text
-normalize_dates_in_text("A bɛ na 13-10-2024 la")  # "A bɛ na Oktɔburu tile ... la"
+normalize_dates_in_text("A bɛ na 13-10-2024 la")  # "A bɛ na Oktɔburu kalo tile ... la"
 
 # Check if word is date-related
 is_bambara_month("Oktɔburu")             # True
@@ -1101,12 +1156,12 @@ is_bambara_day("Juma")                   # True
 
 
 # Time conversion: clock times → Bambara
-time_to_bambara(1, 0)                    # "Nɛgɛ kaɲɛ kelen"
-time_to_bambara(7, 30)                   # "Nɛgɛ kaɲɛ wolonwula ni sanga bi saba"
-format_time_bambara("13:50")             # "Nɛgɛ kaɲɛ tan ni saba ni sanga bi duuru"
+time_to_bambara(1, 0)                    # "Nɛgɛ kanɲɛ kelen"
+time_to_bambara(7, 30)                   # "Nɛgɛ kanɲɛ wolonwula ni sanga bi saba"
+format_time_bambara("13:50")             # "Nɛgɛ kanɲɛ tan ni saba ni sanga bi duuru"
 
 # Time conversion: Bambara → clock times
-bambara_to_time("Nɛgɛ kaɲɛ wolonwula ni sanga bi saba")  # datetime.time(7, 30)
+bambara_to_time("Nɛgɛ kanɲɛ wolonwula ni sanga bi saba")  # datetime.time(7, 30)
 
 # Duration conversion: durations → Bambara
 duration_to_bambara(minutes=30)          # "miniti bi saba"
@@ -1117,7 +1172,7 @@ format_duration_bambara("1h30min10s")    # "lɛrɛ kelen ni miniti bi saba ni se
 bambara_to_duration("lɛrɛ kelen ni miniti bi saba")  # (1, 30, 0)
 
 # Time normalization in text
-normalize_times_in_text("A nana 7:30 la")  # "A nana Nɛgɛ kaɲɛ wolonwula ... la"
+normalize_times_in_text("A nana 7:30 la")  # "A nana Nɛgɛ kanɲɛ wolonwula ... la"
 
 # Check if word is time-related
 is_time_word("lɛrɛ")                      # True

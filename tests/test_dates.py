@@ -5,6 +5,8 @@ import pytest
 from bambara_normalizer import (
     DAYS_OF_WEEK,
     MONTHS,
+    BambaraNormalizer,
+    BambaraNormalizerConfig,
     bambara_to_date,
     bambara_to_day_of_week,
     bambara_to_month,
@@ -16,6 +18,7 @@ from bambara_normalizer import (
     month_to_bambara,
     normalize,
     normalize_dates_in_text,
+    normalize_numeric_expressions,
 )
 
 
@@ -193,3 +196,167 @@ class TestDateValidation:
             date_to_bambara(2024, 10, 32)
         with pytest.raises(ValueError):
             date_to_bambara(2024, 10, 0)
+
+
+class TestFrenchMonthNameDates:
+    """
+    A French date written with the month name ("1er janvier 2026") is read like any
+    other date: month first, then the day, then the year said with "baa".
+    """
+
+    @pytest.mark.parametrize(
+        "text, expected",
+        [
+            ("1er janvier 2026", "Zanwuye kalo tile fɔlɔ san baa fila ni mugan ni wɔɔrɔ"),
+            ("1ère janvier 2026", "Zanwuye kalo tile fɔlɔ san baa fila ni mugan ni wɔɔrɔ"),
+            ("15 mars 2025", "Marsi kalo tile tan ni duuru san baa fila ni mugan ni duuru"),
+            ("2 août 2026", "Uti kalo tile fila san baa fila ni mugan ni wɔɔrɔ"),
+            ("2 aout 2026", "Uti kalo tile fila san baa fila ni mugan ni wɔɔrɔ"),
+            (
+                "25 Décembre 2024",
+                "Desanburu kalo tile mugan ni duuru san baa fila ni mugan ni naani",
+            ),
+            ("3 FÉVRIER 2026", "Feburuye kalo tile saba san baa fila ni mugan ni wɔɔrɔ"),
+        ],
+    )
+    def test_day_month_name_and_year(self, text, expected):
+        """
+        The month name moves before the day, and "1er" reads as the ordinal "fɔlɔ".
+        """
+        result = normalize_numeric_expressions(text, include_kalo=True)
+
+        assert result == expected
+
+    def test_day_and_month_without_a_year(self):
+        """
+        A date with no year is read without one.
+        """
+        result = normalize_numeric_expressions("A bɛ na 1er janvier la", include_kalo=True)
+
+        assert result == "A bɛ na Zanwuye kalo tile fɔlɔ la"
+
+    def test_kalo_follows_the_caller_setting(self):
+        """
+        The month word follows include_kalo like the numeric date formats.
+        """
+        result = normalize_numeric_expressions("15 mars 2025", include_kalo=False)
+
+        assert result == "Marsi tile tan ni duuru san baa fila ni mugan ni duuru"
+
+    @pytest.mark.parametrize("text", ["31 février 2026", "30 février", "32 mars 2026"])
+    def test_impossible_date_is_not_a_date(self, text):
+        """
+        A day the month does not have is not read as a date.
+        """
+        assert normalize_dates_in_text(text) == text
+
+    @pytest.mark.parametrize("text", ["1 janvier 2026", "01/01/2026", "2026-01-01"])
+    def test_first_of_the_month_is_always_folo(self, text):
+        """
+        The first day of a month is said "tile fɔlɔ" however it is written:
+        "1er janvier", "1 janvier" or "01/01".
+        """
+        result = normalize_numeric_expressions(text, include_kalo=True)
+
+        assert result == "Zanwuye kalo tile fɔlɔ san baa fila ni mugan ni wɔɔrɔ"
+
+    def test_date_on_the_first_parses_back(self):
+        """
+        "tile fɔlɔ" converts back to day 1.
+        """
+        assert bambara_to_date(date_to_bambara(2026, 1, 1, include_kalo=True)) == date(2026, 1, 1)
+
+    def test_ordinal_suffix_only_for_the_first(self):
+        """
+        Only the first of the month is written "1er"; "2er janvier" is not a date.
+        """
+        assert normalize_dates_in_text("2er janvier 2026") == "2er janvier 2026"
+
+    def test_month_name_inside_a_word_is_not_a_month(self):
+        """
+        The month must be a whole word: "3 marsupiaux" is no date.
+        """
+        assert normalize_dates_in_text("3 marsupiaux") == "3 marsupiaux"
+
+
+class TestMonthWordKalo:
+    """
+    A date names the month with "kalo" after the month name ("Mɛ kalo"), the way
+    it is said; the word is on unless a caller turns it off.
+    """
+
+    def test_date_in_text_names_the_month_with_kalo(self):
+        """
+        A written date reads with "kalo" by default.
+        """
+        result = normalize_numeric_expressions("12/05/2026")
+
+        assert result == "Mɛ kalo tile tan ni fila san baa fila ni mugan ni wɔɔrɔ"
+
+    def test_date_to_bambara_includes_kalo_by_default(self):
+        """
+        The date function says "kalo" without being asked.
+        """
+        result = date_to_bambara(2024, 10, 13)
+
+        assert result == "Oktɔburu kalo tile tan ni saba san baa fila ni mugan ni naani"
+
+    def test_normalizer_reads_dates_with_kalo(self):
+        """
+        The full normalizer gives the same reading.
+        """
+        result = normalize("12/05/2026", expand_dates=True)
+
+        assert result == "mɛ kalo tile tan ni fila san baa fila ni mugan ni wɔɔrɔ"
+
+    def test_kalo_can_still_be_turned_off(self):
+        """
+        Callers that do not want the month word can still leave it out.
+        """
+        result = normalize_numeric_expressions("12/05/2026", include_kalo=False)
+
+        assert result == "Mɛ tile tan ni fila san baa fila ni mugan ni wɔɔrɔ"
+
+    def test_date_with_kalo_parses_back(self):
+        """
+        A date read with "kalo" converts back to the same date.
+        """
+        assert bambara_to_date(date_to_bambara(2026, 5, 12)) == date(2026, 5, 12)
+
+
+class TestKaloSetting:
+    """
+    "kalo" can be turned on or off from the normalizer configuration, like the
+    other expansion settings.
+    """
+
+    def test_normalizer_says_kalo_by_default(self):
+        """
+        The default configuration says the month word.
+        """
+        normalizer = BambaraNormalizer(BambaraNormalizerConfig(expand_dates=True))
+
+        assert normalizer.normalize("1er janvier 2026") == (
+            "zanwuye kalo tile fɔlɔ san baa fila ni mugan ni wɔɔrɔ"
+        )
+
+    def test_normalizer_can_leave_kalo_out(self):
+        """
+        include_kalo=False drops the month word from every date.
+        """
+        config = BambaraNormalizerConfig(expand_dates=True, include_kalo=False)
+
+        result = BambaraNormalizer(config).normalize("1er janvier 2026 ni 12/05/2026")
+
+        assert result == (
+            "zanwuye tile fɔlɔ san baa fila ni mugan ni wɔɔrɔ "
+            "ni mɛ tile tan ni fila san baa fila ni mugan ni wɔɔrɔ"
+        )
+
+    def test_normalize_function_accepts_the_setting(self):
+        """
+        The one-call normalize() takes the same setting.
+        """
+        result = normalize("12/05/2026", expand_dates=True, include_kalo=False)
+
+        assert result == "mɛ tile tan ni fila san baa fila ni mugan ni wɔɔrɔ"

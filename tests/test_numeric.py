@@ -124,7 +124,7 @@ class TestNormalizerIntegration:
         result = normalizer(MIXED_TEXT)
 
         assert "desanburu" in result
-        assert "nɛgɛ kaɲɛ" in result
+        assert "nɛgɛ kanɲɛ" in result
         assert "litiri wɔɔrɔ" in result
         assert "kilogaramu tan" in result
         assert "tan ni fila fara seegin kan" in result
@@ -153,7 +153,7 @@ class TestWrittenNumberFormats:
 
     def test_mixed_sentence(self):
         assert normalize_numeric_expressions("A bɛ na 10h30 la, 3 500 ani 2,5 kg") == (
-            "A bɛ na Nɛgɛ kaɲɛ tan ni sanga bi saba la, waa saba ni kɛmɛ duuru ani "
+            "A bɛ na Nɛgɛ kanɲɛ tan ni sanga bi saba la, waa saba ni kɛmɛ duuru ani "
             "kilogaramu fila tomi duuru"
         )
 

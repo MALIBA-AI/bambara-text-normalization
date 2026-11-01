@@ -20,7 +20,10 @@ from datetime import time, timedelta
 from .numbers import bambara_to_number, number_to_bambara
 from .spans import TIME, NumericSpan, find_spans, substitute
 
-NEGE_KANYE = "Nɛgɛ kaɲɛ"
+NEGE_KANYE = "Nɛgɛ kanɲɛ"
+# Spelling the package wrote before "kanɲɛ"; still accepted when reading Bambara
+# back into times, so text produced by older versions keeps parsing.
+LEGACY_NEGE_KANYE = "Nɛgɛ kaɲɛ"
 SANGA = "sanga"
 NI = "ni"
 
@@ -43,18 +46,19 @@ def time_to_bambara(hour: int, minute: int = 0, second: int = 0) -> str:
 
     Examples:
         >>> time_to_bambara(1, 0)
-        'Nɛgɛ kaɲɛ kelen'
+        'Nɛgɛ kanɲɛ kelen'
 
         >>> time_to_bambara(1, 5)
-        'Nɛgɛ kaɲɛ kelen ni sanga duuru'
+        'Nɛgɛ kanɲɛ kelen ni sanga duuru'
 
         >>> time_to_bambara(7, 30)
-        'Nɛgɛ kaɲɛ wolonwula ni sanga bi saba'
+        'Nɛgɛ kanɲɛ wolonwula ni sanga bi saba'
 
         >>> time_to_bambara(13, 50)
-        'Nɛgɛ kaɲɛ tan ni saba ni sanga bi duuru'
+        'Nɛgɛ kanɲɛ tan ni saba ni sanga bi duuru'
     """
-    if hour < 0 or hour > 23:
+    # 24:00 is the end-of-day clock time; no other 24 o'clock exists.
+    if hour < 0 or hour > 24 or (hour == 24 and (minute or second)):
         raise ValueError(f"Invalid hour: {hour}")
     if minute < 0 or minute > 59:
         raise ValueError(f"Invalid minute: {minute}")
@@ -89,10 +93,10 @@ def format_time_bambara(t: time | str) -> str:
     Examples:
         >>> from datetime import time
         >>> format_time_bambara(time(7, 30))
-        'Nɛgɛ kaɲɛ wolonwula ni sanga bi saba'
+        'Nɛgɛ kanɲɛ wolonwula ni sanga bi saba'
 
         >>> format_time_bambara("13:50")
-        'Nɛgɛ kaɲɛ tan ni saba ni sanga bi duuru'
+        'Nɛgɛ kanɲɛ tan ni saba ni sanga bi duuru'
     """
     if isinstance(t, str):
         t = parse_time_string(t)
@@ -127,19 +131,26 @@ def bambara_to_time(phrase: str) -> time:
         time object
 
     Examples:
-        >>> bambara_to_time("Nɛgɛ kaɲɛ kelen")
+        >>> bambara_to_time("Nɛgɛ kanɲɛ kelen")
         datetime.time(1, 0)
 
-        >>> bambara_to_time("Nɛgɛ kaɲɛ wolonwula ni sanga bi saba")
+        >>> bambara_to_time("Nɛgɛ kanɲɛ wolonwula ni sanga bi saba")
         datetime.time(7, 30)
     """
     phrase_lower = phrase.lower().strip()
 
-    nege_kanye_lower = NEGE_KANYE.lower()
-    if not phrase_lower.startswith(nege_kanye_lower):
+    prefix = next(
+        (
+            spelling.lower()
+            for spelling in (NEGE_KANYE, LEGACY_NEGE_KANYE)
+            if phrase_lower.startswith(spelling.lower())
+        ),
+        None,
+    )
+    if prefix is None:
         raise ValueError(f"Time phrase must start with '{NEGE_KANYE}': {phrase}")
 
-    remainder = phrase_lower[len(nege_kanye_lower) :].strip()
+    remainder = phrase_lower[len(prefix) :].strip()
 
     sanga_lower = SANGA.lower()
     segoni_lower = SEGONI.lower()
@@ -322,10 +333,24 @@ def bambara_to_duration(phrase: str) -> tuple[int, int, int]:
 
 CLOCK_PATTERN = re.compile(r"\b(\d{1,2}):(\d{2})(?::(\d{2}))?\b")
 # French clock time, "10h30" / "14H05". Two minute digits must follow the "h"
-# directly: a bare "10h" and "1h30min" stay durations.
+# directly, so "1h30min" stays a duration; a bare "10h" is handled below.
 FRENCH_CLOCK_PATTERN = re.compile(r"\b(\d{1,2})[hH](\d{2})\b")
+# Bambara does not mark whether "8h" is a time of day or a length of time ("Nin kɛ
+# 2h" is either "do it at 2" or "do it in two hours"), and the surrounding words
+# are no reliable cue, so the reading follows a convention on how it is written:
+#   - a bare hour ("8h", "8 h") or an hour with minutes ("10h30") is a clock time;
+#   - it is a duration when no clock shows it ("24h", "25h30", "10h75"), or when
+#     the unit is a word ("8 heures", "8 hrs", "1h30min").
+# Sentences that mean a duration but write a bare hour ("A sɛgɛnna 2h") are
+# misread; only the meaning of the sentence could tell them apart.
+BARE_HOUR_CLOCK_PATTERN = re.compile(r"\b(\d{1,2})\s?h\b(?!\s*\d)", re.IGNORECASE)
+HOUR_UNIT = r"(?:heures?|hrs?|h)"
+MINUTE_UNIT = r"(?:minutes?|min|mn|m)"
+SECOND_UNIT = r"s(?:ec)?"
 DURATION_PATTERN = re.compile(
-    r"\b\d+\s*h(?:\s*\d+\s*(?:min|m))?(?:\s*\d+\s*s(?:ec)?)?\b|\b\d+\s*min(?:\s*\d+\s*s(?:ec)?)?\b|\b\d+\s*s(?:ec)?\b",
+    rf"\b\d+\s*{HOUR_UNIT}(?:\s*\d+\s*{MINUTE_UNIT})?(?:\s*\d+\s*{SECOND_UNIT})?\b"
+    rf"|\b\d+\s*(?:minutes?|min|mn)(?:\s*\d+\s*{SECOND_UNIT})?\b"
+    rf"|\b\d+\s*{SECOND_UNIT}\b",
     re.IGNORECASE,
 )
 
@@ -337,6 +362,21 @@ def _replace_clock_time(match: re.Match) -> str | None:
         return time_to_bambara(int(hour), int(minute), second)
     except (ValueError, IndexError):
         return None
+
+
+def _replace_french_clock_time(match: re.Match) -> str:
+    hour, minute = int(match.group(1)), int(match.group(2))
+    try:
+        return time_to_bambara(hour, minute)
+    except ValueError:
+        return duration_to_bambara(hour, minute)
+
+
+def _replace_bare_hour_clock_time(match: re.Match) -> str | None:
+    hour = int(match.group(1))
+    if hour > 23:
+        return None
+    return time_to_bambara(hour)
 
 
 def _replace_duration(match: re.Match) -> str | None:
@@ -353,13 +393,16 @@ def find_time_spans(text: str) -> list[NumericSpan]:
     """
     Find time patterns in text and their Bambara expansions.
 
-    Recognizes HH:MM / HH:MM:SS and French HHhMM clock times (tier 0) and XhYmZs durations
-    (tier 1). Time spans lose against dates and win over measurements and bare
-    numbers.
+    Recognizes HH:MM / HH:MM:SS and French HHhMM clock times and bare "Xh" hours
+    (tier 0), and XhYmZs durations (tier 1). Under the convention above, an
+    impossible HHhMM is read as a duration and an impossible bare hour falls
+    through to the duration pattern. Time spans
+    lose against dates and win over measurements and bare numbers.
     """
     return [
         *find_spans(text, CLOCK_PATTERN, TIME, _replace_clock_time),
-        *find_spans(text, FRENCH_CLOCK_PATTERN, TIME, _replace_clock_time),
+        *find_spans(text, FRENCH_CLOCK_PATTERN, TIME, _replace_french_clock_time),
+        *find_spans(text, BARE_HOUR_CLOCK_PATTERN, TIME, _replace_bare_hour_clock_time),
         *find_spans(text, DURATION_PATTERN, TIME, _replace_duration, tier=1),
     ]
 
@@ -380,7 +423,7 @@ def normalize_times_in_text(text: str) -> str:
 
     Examples:
         >>> normalize_times_in_text("A nana 7:30 la")
-        'A nana Nɛgɛ kaɲɛ wolonwula ni sanga bi saba la'
+        'A nana Nɛgɛ kanɲɛ wolonwula ni sanga bi saba la'
 
         >>> normalize_times_in_text("A tagara 1h30min")
         'A tagara lɛrɛ kelen ni miniti bi saba'
@@ -398,7 +441,7 @@ def denormalize_times_in_text(text: str) -> str:
     Returns:
         Text with times converted to standard format
     """
-    nege_pattern = rf"{NEGE_KANYE}\s+(.+?)(?:\s+{NI}\s+{SANGA}\s+(.+?))?(?=\s|$|[.,!?])"
+    nege_pattern = rf"(?:{NEGE_KANYE}|{LEGACY_NEGE_KANYE})\s+(.+?)(?:\s+{NI}\s+{SANGA}\s+(.+?))?(?=\s|$|[.,!?])"
 
     def replace_clock(match: re.Match) -> str:
         try:
@@ -450,7 +493,9 @@ def denormalize_times_in_text(text: str) -> str:
 def is_time_word(word: str) -> bool:
     time_words = {
         NEGE_KANYE.lower(),
+        LEGACY_NEGE_KANYE.lower(),
         "nɛgɛ",
+        "kanɲɛ",
         "kaɲɛ",
         SANGA.lower(),
         LERE.lower(),
