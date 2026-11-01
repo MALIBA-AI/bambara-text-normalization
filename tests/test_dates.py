@@ -16,6 +16,7 @@ from bambara_normalizer import (
     month_to_bambara,
     normalize,
     normalize_dates_in_text,
+    normalize_numeric_expressions,
 )
 
 
@@ -193,3 +194,68 @@ class TestDateValidation:
             date_to_bambara(2024, 10, 32)
         with pytest.raises(ValueError):
             date_to_bambara(2024, 10, 0)
+
+
+class TestFrenchMonthNameDates:
+    """
+    A French date written with the month name ("1er janvier 2026") is read like any
+    other date: month first, then the day, then the year said with "baa".
+    """
+
+    @pytest.mark.parametrize(
+        "text, expected",
+        [
+            ("1er janvier 2026", "Zanwuye kalo tile fɔlɔ san baa fila ni mugan ni wɔɔrɔ"),
+            ("1ère janvier 2026", "Zanwuye kalo tile fɔlɔ san baa fila ni mugan ni wɔɔrɔ"),
+            ("15 mars 2025", "Marsi kalo tile tan ni duuru san baa fila ni mugan ni duuru"),
+            ("2 août 2026", "Uti kalo tile fila san baa fila ni mugan ni wɔɔrɔ"),
+            ("2 aout 2026", "Uti kalo tile fila san baa fila ni mugan ni wɔɔrɔ"),
+            (
+                "25 Décembre 2024",
+                "Desanburu kalo tile mugan ni duuru san baa fila ni mugan ni naani",
+            ),
+            ("3 FÉVRIER 2026", "Feburuye kalo tile saba san baa fila ni mugan ni wɔɔrɔ"),
+        ],
+    )
+    def test_day_month_name_and_year(self, text, expected):
+        """
+        The month name moves before the day, and "1er" reads as the ordinal "fɔlɔ".
+        """
+        result = normalize_numeric_expressions(text, include_kalo=True)
+
+        assert result == expected
+
+    def test_day_and_month_without_a_year(self):
+        """
+        A date with no year is read without one.
+        """
+        result = normalize_numeric_expressions("A bɛ na 1er janvier la", include_kalo=True)
+
+        assert result == "A bɛ na Zanwuye kalo tile fɔlɔ la"
+
+    def test_kalo_follows_the_caller_setting(self):
+        """
+        The month word follows include_kalo like the numeric date formats.
+        """
+        result = normalize_numeric_expressions("15 mars 2025", include_kalo=False)
+
+        assert result == "Marsi tile tan ni duuru san baa fila ni mugan ni duuru"
+
+    @pytest.mark.parametrize("text", ["31 février 2026", "30 février", "32 mars 2026"])
+    def test_impossible_date_is_not_a_date(self, text):
+        """
+        A day the month does not have is not read as a date.
+        """
+        assert normalize_dates_in_text(text) == text
+
+    def test_ordinal_suffix_only_for_the_first(self):
+        """
+        Only the first of the month is written "1er"; "2er janvier" is not a date.
+        """
+        assert normalize_dates_in_text("2er janvier 2026") == "2er janvier 2026"
+
+    def test_month_name_inside_a_word_is_not_a_month(self):
+        """
+        The month must be a whole word: "3 marsupiaux" is no date.
+        """
+        assert normalize_dates_in_text("3 marsupiaux") == "3 marsupiaux"
