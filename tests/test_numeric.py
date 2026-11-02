@@ -1,6 +1,6 @@
 """Order-independence tests for the unified numeric pass."""
 
-import itertools
+import random
 
 import pytest
 
@@ -17,14 +17,53 @@ MIXED_TEXT = (
     "wari 12 + 8 = 20."
 )
 
+RANGES_AND_PHONES_TEXT = (
+    "San 2020-2025, butiki bɛ dayɛlɛ 8h-17h30, telefɔni 76 12 34 56 walima +223 66123456, "
+    "3 kg, 12 - 5 = 7, 1er janvier 2026, 25%"
+)
+
 FLAG_FOR_KIND = {
     "date": "dates",
+    "range": "ranges",
     "time": "times",
     "arithmetic": "arithmetic",
     "currency": "currency",
+    "phone": "phones",
     "measurement": "measurements",
     "number": "numbers",
 }
+
+SHUFFLED_ORDERINGS = 48
+
+
+def sample_orderings(kinds, shuffles=SHUFFLED_ORDERINGS, seed=0):
+    """
+    A fixed, reproducible sample of orderings of the expander kinds.
+
+    Checking all n! orderings grows too fast (40 320 for 8 kinds), and an ordering bug
+    shows up in almost any reordering. The sample keeps the orderings most likely to
+    expose one: the declared order and its reverse, every rotation of both (each kind
+    runs first and last), every swap of two neighbouring kinds (each precedence pair
+    inverted), and seeded shuffles for everything else.
+    """
+    kinds = tuple(kinds)
+    reverse = kinds[::-1]
+    orderings = [kinds, reverse]
+    for base in (kinds, reverse):
+        orderings += [base[i:] + base[:i] for i in range(1, len(base))]
+    for i in range(len(kinds) - 1):
+        swapped = list(kinds)
+        swapped[i], swapped[i + 1] = swapped[i + 1], swapped[i]
+        orderings.append(tuple(swapped))
+    generator = random.Random(seed)
+    for _ in range(shuffles):
+        shuffled = list(kinds)
+        generator.shuffle(shuffled)
+        orderings.append(tuple(shuffled))
+    return list(dict.fromkeys(orderings))
+
+
+ORDERINGS = sample_orderings(KIND_PRECEDENCE)
 
 
 def only(kind):
@@ -59,7 +98,22 @@ class TestSpanClassification:
 
 
 class TestOrderIndependence:
-    @pytest.mark.parametrize("order", list(itertools.permutations(KIND_PRECEDENCE)))
+    def test_every_kind_has_a_flag(self):
+        """
+        Each kind must be switchable on its own, or the orderings below never move it.
+        """
+        assert set(FLAG_FOR_KIND) == set(KIND_PRECEDENCE)
+
+    def test_sample_is_reproducible_and_covers_every_kind_first_and_last(self):
+        """
+        The sample is the same on every run, and every kind runs first and runs last
+        in at least one ordering.
+        """
+        assert sample_orderings(KIND_PRECEDENCE) == ORDERINGS
+        assert {order[0] for order in ORDERINGS} == set(KIND_PRECEDENCE)
+        assert {order[-1] for order in ORDERINGS} == set(KIND_PRECEDENCE)
+
+    @pytest.mark.parametrize("order", ORDERINGS)
     def test_expanding_one_kind_at_a_time_is_order_independent(self, order):
         expected = normalize_numeric_expressions(MIXED_TEXT)
 
@@ -69,12 +123,26 @@ class TestOrderIndependence:
 
         assert result == expected
 
-    @pytest.mark.parametrize("order", list(itertools.permutations(KIND_PRECEDENCE)))
+    @pytest.mark.parametrize("order", ORDERINGS)
     def test_order_independent_on_ambiguous_shapes(self, order):
         text = "1h30min, 2024-01-05, 100 m, 3,5 kg, 7:05, 12"
         expected = normalize_numeric_expressions(text)
 
         result = text
+        for kind in order:
+            result = normalize_numeric_expressions(result, **only(kind))
+
+        assert result == expected
+
+    @pytest.mark.parametrize("order", ORDERINGS)
+    def test_order_independent_with_ranges_and_phones(self, order):
+        """
+        Year and time ranges and phone numbers give the same text whatever order the
+        kinds are expanded in.
+        """
+        expected = normalize_numeric_expressions(RANGES_AND_PHONES_TEXT)
+
+        result = RANGES_AND_PHONES_TEXT
         for kind in order:
             result = normalize_numeric_expressions(result, **only(kind))
 
