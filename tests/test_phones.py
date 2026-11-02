@@ -115,7 +115,7 @@ class TestNotAPhoneNumber:
     def test_a_date_stays_a_date(self):
         assert (
             normalize_numeric_expressions("24-12-2025")
-            == "Desanburu tile mugan ni naani san baa fila ni mugan ni duuru"
+            == "Desanburu kalo tile mugan ni naani san baa fila ni mugan ni duuru"
         )
 
     @pytest.mark.parametrize(

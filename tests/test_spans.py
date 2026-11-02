@@ -4,8 +4,7 @@ import random
 
 import pytest
 
-from bambara_normalizer.spans import KIND_PRECEDENCE, NumericSpan, resolve_spans
-from bambara_normalizer.spans import _precedence_key as precedence_key
+from bambara_normalizer.spans import KIND_PRECEDENCE, NumericSpan, _precedence_key, resolve_spans
 
 
 def resolve_by_checking_every_accepted_span(candidates):
@@ -14,7 +13,7 @@ def resolve_by_checking_every_accepted_span(candidates):
     unless it overlaps any span already kept.
     """
     accepted = []
-    for candidate in sorted(candidates, key=precedence_key):
+    for candidate in sorted(candidates, key=_precedence_key):
         if any(candidate.overlaps(span) for span in accepted):
             continue
         accepted.append(candidate)
