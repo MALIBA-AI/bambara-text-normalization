@@ -17,6 +17,8 @@ from __future__ import annotations
 import re
 from datetime import date, datetime
 
+from .arithmetic import YEAR_RANGE
+from .currency import CURRENCY_TO_BAMBARA
 from .numbers import bambara_to_number, number_to_bambara, number_to_ordinal
 from .spans import DATE, NumericSpan, find_spans, substitute
 
@@ -364,6 +366,20 @@ DATE_MONTH_NAME_PATTERN = re.compile(
     rf"(?<![\w.,])(\d{{1,2}})(er|ère|re)?\s+({_FRENCH_MONTH_NAMES})(?:\s+(\d{{4}}))?(?!\w)",
     re.IGNORECASE,
 )
+# "san 2026": a year written after "san" (year). The year must not run on into more
+# digits or into a range ("san 2026-2027" is left to the range reader).
+YEAR_AFTER_SAN_PATTERN = re.compile(
+    r"\b(san)(\s+)(\d{4})(?![\d.,:/]?\d)(?!\s*[-–—]\s*\d)", re.IGNORECASE
+)
+# "san" is also the verb "buy" ("A ye a san 2500 FCFA la"): a currency after the
+# digits makes them a price, not a year.
+CURRENCY_AFTER_PATTERN = re.compile(
+    r"\s*(?:"
+    + "|".join(re.escape(name) for name in sorted(CURRENCY_TO_BAMBARA, key=len, reverse=True))
+    + r")(?!\w)",
+    re.IGNORECASE,
+)
+
 # A leap year, so "29 février" without a year is accepted.
 _ANY_LEAP_YEAR = 2000
 
@@ -373,7 +389,7 @@ def find_date_spans(text: str, include_kalo: bool = True) -> list[NumericSpan]:
     Find date patterns in text and their Bambara expansions.
 
     Recognizes DD-MM-YYYY / DD/MM/YYYY and "1er janvier 2026" / "15 mars" (French,
-    tier 0) and YYYY-MM-DD (ISO, tier 1). Dates are the most specific numeric shape, so these spans win over
+    tier 0), YYYY-MM-DD (ISO, tier 1), and a year after "san" ("san 2026", tier 2). Dates are the most specific numeric shape, so these spans win over
     any overlapping time, measurement, or number span.
     """
 
@@ -416,7 +432,16 @@ def find_date_spans(text: str, include_kalo: bool = True) -> list[NumericSpan]:
         *find_spans(text, DATE_FRENCH_PATTERN, DATE, replace_date_french),
         *find_spans(text, DATE_MONTH_NAME_PATTERN, DATE, replace_date_month_name),
         *find_spans(text, DATE_ISO_PATTERN, DATE, replace_date_iso, tier=1),
+        *find_spans(text, YEAR_AFTER_SAN_PATTERN, DATE, _replace_year_after_san, tier=2),
     ]
+
+
+def _replace_year_after_san(match: re.Match) -> str | None:
+    san, space, digits = match.groups()
+    year = int(digits)
+    if year not in YEAR_RANGE or CURRENCY_AFTER_PATTERN.match(match.string, match.end()):
+        return None
+    return f"{san}{space}{_year_to_bambara(year)}"
 
 
 def normalize_dates_in_text(text: str, include_kalo: bool = True) -> str:

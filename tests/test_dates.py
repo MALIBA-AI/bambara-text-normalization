@@ -360,3 +360,64 @@ class TestKaloSetting:
         result = normalize("12/05/2026", expand_dates=True, include_kalo=False)
 
         assert result == "mɛ tile tan ni fila san baa fila ni mugan ni wɔɔrɔ"
+
+
+class TestYearAfterSan:
+    """
+    A year written after "san" (year) is said with "baa", like the year of a full
+    date (issue #43).
+    """
+
+    @pytest.mark.parametrize(
+        "text, expected",
+        [
+            ("san 2026", "san baa fila ni mugan ni wɔɔrɔ"),
+            ("San 1998", "San baa kelen ni kɛmɛ kɔnɔntɔn ni bi kɔnɔntɔn ni seegin"),
+            ("SAN 2026", "SAN baa fila ni mugan ni wɔɔrɔ"),
+            ("A bɛ na san 2026 la", "A bɛ na san baa fila ni mugan ni wɔɔrɔ la"),
+            ("san 2026 kɔnɔ", "san baa fila ni mugan ni wɔɔrɔ kɔnɔ"),
+        ],
+    )
+    def test_year_after_san_uses_baa(self, text, expected):
+        """
+        "san" followed by a four-digit year reads the year with "baa", in any case.
+        """
+        assert normalize_numeric_expressions(text) == expected
+
+    @pytest.mark.parametrize(
+        "text, expected",
+        [
+            ("2026", "waa fila ni mugan ni wɔɔrɔ"),
+            ("A ye 2026 FCFA di", "A ye waa fila ni mugan ni wɔɔrɔ FCFA di"),
+            ("sanji 2026", "sanji waa fila ni mugan ni wɔɔrɔ"),
+        ],
+    )
+    def test_number_without_san_is_unchanged(self, text, expected):
+        """
+        Without "san" right before it, a four-digit number stays a plain number.
+        """
+        assert normalize_numeric_expressions(text) == expected
+
+    @pytest.mark.parametrize(
+        "text, expected",
+        [
+            ("A ye a san 2500 FCFA la", "A ye a san waa fila ni kɛmɛ duuru FCFA la"),
+            ("san 0999", "san kɛmɛ kɔnɔntɔn ni bi kɔnɔntɔn ni kɔnɔntɔn"),
+            ("san 26", "san mugan ni wɔɔrɔ"),
+            ("san 20260", "san waa mugan ni kɛmɛ fila ni bi wɔɔrɔ"),
+        ],
+    )
+    def test_amount_or_non_year_after_san_is_not_a_year(self, text, expected):
+        """
+        "san" is also the verb "buy": a currency after the digits makes them a price,
+        and anything that is not a four-digit year from 1000 to 2999 stays a number.
+        """
+        assert normalize_numeric_expressions(text) == expected
+
+    def test_year_range_after_san_is_left_to_the_range(self):
+        """
+        "san 2026-2027" is a range, so the year reading does not take its first year.
+        """
+        assert normalize_numeric_expressions("san 2026-2027") == (
+            "san waa fila ni mugan ni wɔɔrɔ fo waa fila ni mugan ni wolonwula"
+        )

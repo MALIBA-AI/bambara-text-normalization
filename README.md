@@ -271,6 +271,8 @@ Literal translation: "October month day thirteen year two thousand twenty-four"
 
 `kalo` ("month") is said by default. To leave it out, pass `include_kalo=False` to the date functions, to `normalize()`, or to `BambaraNormalizerConfig`.
 
+A year is said with `baa`, not `waa`. Besides full dates, a four-digit year written after `san` is read as a year: `san 2026` => `san baa fila ni mugan ni wɔɔrɔ`. A year with no `san` before it (`2026`) stays a plain number. **Limitation:** `san` is also the verb "buy", so a price after it (`A ye a san 2500 la`) is read with `baa`; a currency after the digits (`san 2500 FCFA`) keeps it a price.
+
 ### Days of the Week
 
 | Day | Bambara | Day | Bambara |
