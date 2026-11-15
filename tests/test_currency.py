@@ -194,6 +194,31 @@ class TestNumericExpressionsWithCurrency:
     def test_prefixed_amount_with_decimal_or_grouping(self, text, expected):
         assert normalize_numeric_expressions(text, currency=True) == expected
 
+    @pytest.mark.parametrize(
+        ("text", "suffixed"),
+        [
+            ("FCFA 1000", "1000 FCFA"),
+            ("FCFA 15.000", "15.000 FCFA"),
+            ("CFA 5000", "5000 CFA"),
+            ("F CFA 2 500", "2 500 F CFA"),
+        ],
+    )
+    def test_cfa_written_before_the_amount_reads_like_after_it(self, text, suffixed):
+        """
+        "FCFA 1000" is common in prices and ads; it is the same amount as "1000 FCFA".
+        """
+        expected = normalize_numeric_expressions(suffixed, currency=True)
+
+        assert normalize_numeric_expressions(text, currency=True) == expected
+
+    def test_amount_after_a_suffixed_one_keeps_the_suffix_reading(self):
+        """
+        In "5000 FCFA 10 ...", FCFA closes the first amount, it does not open the next.
+        """
+        result = normalize_numeric_expressions("5000 FCFA 10 bɛ", currency=True)
+
+        assert result == "sefa wari waa kelen tan bɛ"
+
     def test_arithmetic_keeps_precedence_over_currency(self):
         """A complete operation is read as one; the currency after it stays as written."""
         assert normalize_numeric_expressions("5-3 FCFA", currency=True) == "saba bɔ duuru la FCFA"

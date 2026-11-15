@@ -72,6 +72,82 @@ class TestNotARange:
         )
 
 
+class TestNumberRanges:
+    @pytest.mark.parametrize(
+        ("text", "expected"),
+        [
+            ("5-10", "duuru fo tan"),
+            ("(5-10 san)", "(duuru fo tan san)"),
+            ("tile 20-25", "tile mugan fo mugan ni duuru"),
+            ("kilo 240-250", "kilo kɛmɛ fila ni bi naani fo kɛmɛ fila ni bi duuru"),
+            ("0-5", "fu fo duuru"),
+            ("5–10", "duuru fo tan"),
+        ],
+    )
+    def test_a_tight_dash_between_increasing_numbers_is_a_range(self, text, expected):
+        """
+        "5-10" written with no spaces and a larger second number is how an interval
+        is written; a subtraction giving a negative number is not.
+        """
+        assert normalize_numeric_expressions(text) == expected
+
+    @pytest.mark.parametrize(
+        ("text", "alone"),
+        [
+            ("5-10 kg", "5 kg"),
+            ("15-20 minutes", "15 minutes"),
+            ("8-10h", "8h"),
+        ],
+    )
+    def test_a_unit_after_the_second_end_is_said_on_both_ends(self, text, alone):
+        """
+        The unit written once after the range belongs to both ends, as in time
+        ranges where each end keeps its full reading.
+        """
+        first = normalize_numeric_expressions(alone)
+
+        result = normalize_numeric_expressions(text)
+
+        assert result.startswith(f"{first} fo ")
+        assert not any(character.isdigit() for character in result)
+
+    def test_a_currency_after_the_second_end_is_said_on_both_ends(self):
+        """
+        Only when currency is enabled, like any other money amount.
+        """
+        first = normalize_numeric_expressions("1000 FCFA", currency=True)
+        last = normalize_numeric_expressions("2000 FCFA", currency=True)
+
+        result = normalize_numeric_expressions("1000-2000 FCFA", currency=True)
+
+        assert result == f"{first} fo {last}"
+
+    def test_a_currency_before_the_first_end_is_said_on_both_ends(self):
+        """
+        "FCFA 1000-2000" is the same range with the currency written first.
+        """
+        expected = normalize_numeric_expressions("1000-2000 FCFA", currency=True)
+
+        assert normalize_numeric_expressions("FCFA 1000-2000", currency=True) == expected
+
+    @pytest.mark.parametrize(
+        "text",
+        ["15-15-15", "20-22-33-44", "2011-087", "12-2025", "1,5-2", "5-10abc"],
+    )
+    def test_chains_leading_zeros_and_mixed_shapes_are_not_number_ranges(self, text):
+        """
+        A chain is a code or a phone number, a leading zero marks a reference
+        number, and a year beside a small number is a date fragment.
+        """
+        assert " fo " not in normalize_numeric_expressions(text)
+
+    def test_a_spaced_dash_keeps_its_subtraction_reading(self):
+        """
+        "5 - 10" is written like an operation, so the convention leaves it one.
+        """
+        assert normalize_numeric_expressions("5 - 10") == "tan bɔ duuru la"
+
+
 class TestInText:
     def test_ranges_in_a_sentence(self):
         assert normalize_ranges_in_text("Butiki bɛ dayɛlɛ 8h-17h.") == (

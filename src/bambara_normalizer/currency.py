@@ -77,8 +77,10 @@ CURRENCY_TO_BAMBARA = {
     DOROME: DOROME,
 }
 
-# Symbols and ISO codes are also written before the amount: "$20", "EUR 15".
-PREFIX_CURRENCIES = ("€", "$", "£", "eur", "usd", "gbp", "xof")
+# Symbols and ISO codes are also written before the amount: "$20", "EUR 15". So is
+# the CFA franc in prices and adverts ("FCFA 1000"). The bare franc names ("f",
+# "francs") stay suffix-only: before a number they are words, not currencies.
+PREFIX_CURRENCIES = ("€", "$", "£", "eur", "usd", "gbp", "xof", "fcfa", "f cfa", "f.cfa", "cfa")
 
 
 def currency_to_bambara(amount: int | float | str, currency: str) -> str:
