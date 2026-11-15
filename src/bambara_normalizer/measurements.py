@@ -40,6 +40,9 @@ MILILITIRI = "mililitiri"
 EKITARI = "ɛkitari"
 METRE_KARE = "mɛtɛrɛ kare"
 
+# The degree sign is not spoken; the temperature is said in degrees, as a loanword.
+DEGERE = "degere"
+
 KONO = "kɔnɔ"  # "in" or "per"
 
 UNIT_TO_BAMBARA = {
@@ -60,6 +63,8 @@ UNIT_TO_BAMBARA = {
     "ha": EKITARI,
     "m²": METRE_KARE,
     "m2": METRE_KARE,
+    "°C": DEGERE,
+    "°c": DEGERE,
 }
 
 BAMBARA_TO_UNIT = {v: k for k, v in UNIT_TO_BAMBARA.items()}
@@ -75,6 +80,7 @@ BAMBARA_TO_UNIT[LITIRI] = "L"
 BAMBARA_TO_UNIT[MILILITIRI] = "mL"
 BAMBARA_TO_UNIT[EKITARI] = "ha"
 BAMBARA_TO_UNIT[METRE_KARE] = "m²"
+BAMBARA_TO_UNIT[DEGERE] = "°C"
 
 UNIT_WORDS_TO_BAMBARA = {
     "kilogram": KILOGARAMU,
@@ -384,6 +390,7 @@ def is_measurement_word(word: str) -> bool:
         LITIRI.lower(),
         MILILITIRI.lower(),
         EKITARI.lower(),
+        DEGERE.lower(),
     }
 
     if word_lower in bambara_units:
@@ -403,7 +410,7 @@ def get_unit_category(unit: str) -> str | None:
         unit: Unit abbreviation or Bambara word
 
     Returns:
-        Category string: "weight", "length", "volume", "area", or None
+        Category string: "weight", "length", "volume", "area", "temperature", or None
 
     Examples:
         >>> get_unit_category("kg")
@@ -416,6 +423,7 @@ def get_unit_category(unit: str) -> str | None:
     length_units = {KILOMETRE, METRE, SANTIMETRE, MILIMETRE, "km", "m", "cm", "mm"}
     volume_units = {LITIRI, MILILITIRI, "l", "L", "ml", "mL"}
     area_units = {EKITARI, METRE_KARE, "ha", "m²", "m2"}
+    temperature_units = {DEGERE, "°C", "°c"}
 
     unit_check = unit.lower() if unit not in {"L", "mL"} else unit
 
@@ -427,5 +435,7 @@ def get_unit_category(unit: str) -> str | None:
         return "volume"
     elif unit_check in area_units or unit in area_units:
         return "area"
+    elif unit_check in temperature_units or unit in temperature_units:
+        return "temperature"
 
     return None

@@ -158,7 +158,7 @@ def _kinds_to_scan(enabled: dict[str, bool]) -> tuple[str, ...]:
 def _candidates(text: str, kinds: tuple[str, ...], include_kalo: bool) -> list[NumericSpan]:
     finders = {
         DATE: lambda: find_date_spans(text, include_kalo=include_kalo),
-        RANGE: lambda: find_range_spans(text),
+        RANGE: lambda: find_range_spans(text, currency=CURRENCY in kinds),
         TIME: lambda: find_time_spans(text),
         ARITHMETIC: lambda: find_arithmetic_spans(text),
         CURRENCY: lambda: find_currency_spans(text),

@@ -13,6 +13,7 @@ from bambara_normalizer import (
     measurement_to_bambara,
     normalize,
     normalize_measurements_in_text,
+    normalize_numeric_expressions,
 )
 
 
@@ -249,3 +250,30 @@ class TestGroupedMeasurementValue:
         assert normalize_measurements_in_text("A ye 1 000,5 kg") == (
             "A ye kilogaramu waa kelen tomi duuru"
         )
+
+
+class TestDegreesCelsius:
+    @pytest.mark.parametrize(
+        ("text", "expected"),
+        [
+            ("24°C", "degere mugan ni naani"),
+            ("24 °C", "degere mugan ni naani"),
+            ("20,8°C", "degere mugan tomi seegin"),
+            ("1200°c", "degere waa kelen ni kɛmɛ fila"),
+        ],
+    )
+    def test_a_temperature_in_celsius_is_read_in_degrees(self, text, expected):
+        """
+        The degree sign is not spoken; the temperature takes the unit word first,
+        like every other measurement.
+        """
+        assert normalize_numeric_expressions(text) == expected
+
+    def test_a_numbered_item_with_a_degree_sign_is_not_a_temperature(self):
+        """
+        "1°)" numbers a list item; only "°C" marks a temperature.
+        """
+        assert "degere" not in normalize_numeric_expressions("1°) ka jalaki bɔ")
+
+    def test_degrees_are_a_temperature_unit(self):
+        assert get_unit_category("°C") == "temperature"
